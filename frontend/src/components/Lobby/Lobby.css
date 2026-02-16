@@ -1,0 +1,153 @@
+.lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 20px;
+  max-width: 640px;
+  width: 100%;
+}
+
+.lobby-title {
+  font-size: 36px;
+  color: #f1c40f;
+  margin: 0;
+}
+
+.lobby-subtitle {
+  color: #95a5a6;
+  margin: 0;
+}
+
+.lobby-connecting {
+  color: #e74c3c;
+  font-size: 14px;
+}
+
+.lobby-section {
+  width: 100%;
+}
+
+.lobby-section h2 {
+  font-size: 16px;
+  color: #95a5a6;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.lobby-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lobby-card {
+  flex: 1;
+  min-width: 140px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #ecf0f1;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.lobby-card:hover {
+  border-color: rgba(241, 196, 15, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lobby-card.selected {
+  border-color: #f1c40f;
+  background: rgba(241, 196, 15, 0.1);
+}
+
+.lobby-card-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.lobby-card-desc {
+  font-size: 13px;
+  color: #95a5a6;
+}
+
+.lobby-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ecf0f1;
+  cursor: pointer;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.lobby-toggle input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #f1c40f;
+}
+
+.lobby-player-count {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ecf0f1;
+  font-size: 15px;
+}
+
+.lobby-count-options {
+  display: flex;
+  gap: 8px;
+}
+
+.lobby-count-btn {
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #ecf0f1;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.lobby-count-btn:hover {
+  border-color: rgba(241, 196, 15, 0.4);
+}
+
+.lobby-count-btn.selected {
+  border-color: #f1c40f;
+  background: rgba(241, 196, 15, 0.1);
+  color: #f1c40f;
+  font-weight: bold;
+}
+
+.lobby-start {
+  padding: 14px 48px;
+  font-size: 18px;
+  font-weight: bold;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.lobby-start:hover:not(:disabled) {
+  background: #2ecc71;
+  transform: translateY(-2px);
+}
+
+.lobby-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

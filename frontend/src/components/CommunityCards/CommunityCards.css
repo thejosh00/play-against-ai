@@ -1,0 +1,6 @@
+.community-cards {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 8px 0;
+}
