@@ -33,13 +33,15 @@ class PreFlopStrategyTest {
         players: List<Player>,
         actionHistory: List<ActionRecord> = emptyList(),
         bigBlind: Int = 10,
-        currentBetLevel: Int = 10
+        currentBetLevel: Int = 10,
+        ante: Int = 0
     ): GameState {
         return GameState(
             players = players,
             bigBlind = bigBlind,
             smallBlind = bigBlind / 2,
             currentBetLevel = currentBetLevel,
+            ante = ante,
             actionHistory = actionHistory.toMutableList()
         )
     }
@@ -247,11 +249,12 @@ class PreFlopStrategyTest {
 
     @Test
     fun `TAG folds marginal hand vs Nit UTG raise`() {
-        // TAG facing-raise base range has 12 hands (cutoff ~14 in rankings)
-        // vs Nit UTG 3x: adjustment = -8 -> only top ~6 hands
-        // AJs is in TAG's base facing-raise range but should be outside adjusted range
-        val baseRange = TagArchetype.createProfile().archetype.getFacingRaiseRange(Position.BB)
-        assertTrue("AJs" in baseRange, "AJs should be in TAG base facing-raise range")
+        // TAG facing-raise base cutoff is 12
+        // vs Nit UTG 3x: adjustment = -8 -> cutoff = 4
+        // AJs is at index 8 in rankings, so it should be outside the adjusted range
+        val baseCutoff = TagArchetype.getFacingRaiseCutoff(Position.BB)
+        val ajsIndex = HandRankings.indexOf("AJs")
+        assertTrue(ajsIndex < baseCutoff, "AJs should be in TAG base facing-raise range")
 
         val raiser = makePlayer(0, NitArchetype, Position.UTG)
         val defender = makePlayer(1, TagArchetype, Position.BB)
@@ -261,7 +264,8 @@ class PreFlopStrategyTest {
             bigBlind = 10
         )
         val adjustment = strategy.computeRangeAdjustment(defender, state, Scenario.FACING_RAISE)
-        val adjustedRange = HandRankings.adjustRange(baseRange, adjustment)
+        val adjustedCutoff = (baseCutoff + adjustment).coerceIn(1, HandRankings.RANKED_HANDS.size)
+        val adjustedRange = HandRankings.topN(adjustedCutoff)
         assertFalse("AJs" in adjustedRange, "AJs should be outside adjusted range vs Nit UTG")
         assertTrue("AA" in adjustedRange, "AA should remain in adjusted range")
         assertTrue("KK" in adjustedRange, "KK should remain in adjusted range")
@@ -269,10 +273,9 @@ class PreFlopStrategyTest {
 
     @Test
     fun `TAG plays wider vs LAG BTN steal`() {
-        // TAG facing-raise base range has 12 hands
-        // vs LAG BTN 2.2x: adjustment = +5 -> wider range
-        val baseRange = TagArchetype.createProfile().archetype.getFacingRaiseRange(Position.BB)
-        val baseSize = baseRange.size
+        // TAG facing-raise base cutoff is 12
+        // vs LAG BTN 2.2x: adjustment = +5 -> cutoff = 17
+        val baseCutoff = TagArchetype.getFacingRaiseCutoff(Position.BB)
 
         val raiser = makePlayer(0, LagArchetype, Position.BTN)
         val defender = makePlayer(1, TagArchetype, Position.BB)
@@ -282,9 +285,55 @@ class PreFlopStrategyTest {
             bigBlind = 10
         )
         val adjustment = strategy.computeRangeAdjustment(defender, state, Scenario.FACING_RAISE)
-        val adjustedRange = HandRankings.adjustRange(baseRange, adjustment)
-        assertTrue(adjustedRange.size > baseSize, "Adjusted range should be wider vs LAG BTN steal")
-        // All base range hands should still be included (contiguous fill)
-        assertTrue(adjustedRange.containsAll(baseRange) || adjustedRange.size > baseSize)
+        val adjustedCutoff = (baseCutoff + adjustment).coerceIn(1, HandRankings.RANKED_HANDS.size)
+        assertTrue(adjustedCutoff > baseCutoff, "Adjusted cutoff should be wider vs LAG BTN steal")
+    }
+
+    // --- Context adjustment integration: OPEN scenario now gets non-zero adjustment ---
+
+    @Test
+    fun `Shark open range widens with antes via context adjustment`() {
+        val config = GameConfig.Tournament(
+            buyin = TournamentBuyin.FIVE_HUNDRED,
+            playerCount = 45,
+            antesEnabled = true
+        )
+        val ts = TournamentState.create(config)
+        val state = makeState(
+            players = emptyList(),
+            ante = 10
+        )
+        val context = GameContext.from(config, state, ts)
+        // Shark: antes +3, EARLY stage 0 = +3
+        assertEquals(3, SharkArchetype.getGameContextAdjustment(context, Scenario.OPEN))
+
+        val baseCutoff = SharkArchetype.getOpenCutoff(Position.CO)
+        val adjustedCutoff = baseCutoff + 3
+        assertTrue(adjustedCutoff > baseCutoff, "Antes should widen Shark's open range")
+    }
+
+    @Test
+    fun `TAG open range tightens in raked cash game`() {
+        val config = GameConfig.CashGame(stakes = CashStakes.TWO_FIVE, rakeEnabled = true)
+        val state = makeState(players = emptyList())
+        val context = GameContext.from(config, state)
+        // TAG: rake -1 = -1
+        assertEquals(-1, TagArchetype.getGameContextAdjustment(context, Scenario.OPEN))
+
+        val baseCutoff = TagArchetype.getOpenCutoff(Position.CO)
+        val adjustedCutoff = baseCutoff - 1
+        assertTrue(adjustedCutoff < baseCutoff, "Rake should tighten TAG's open range")
+    }
+
+    @Test
+    fun `context adjustment has no effect with null config`() {
+        val state = makeState(players = emptyList())
+        val context = GameContext.from(null, state)
+        for (archetype in PlayerArchetype.all) {
+            assertEquals(
+                0, archetype.getGameContextAdjustment(context, Scenario.OPEN),
+                "${archetype.displayName} should return 0 for null config"
+            )
+        }
     }
 }

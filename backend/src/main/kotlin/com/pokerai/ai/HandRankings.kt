@@ -61,14 +61,4 @@ object HandRankings {
         return RANKED_HANDS.subList(0, clamped).toSet()
     }
 
-    fun rangeToCutoff(range: Set<String>): Int {
-        if (range.isEmpty()) return 0
-        return range.maxOf { indexOf(it) } + 1
-    }
-
-    fun adjustRange(baseRange: Set<String>, adjustment: Int): Set<String> {
-        val cutoff = rangeToCutoff(baseRange)
-        val newCutoff = (cutoff + adjustment).coerceIn(1, RANKED_HANDS.size)
-        return topN(newCutoff)
-    }
 }

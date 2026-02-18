@@ -1,5 +1,7 @@
 package com.pokerai.model.archetype
 
+import com.pokerai.ai.GameContext
+import com.pokerai.ai.Scenario
 import com.pokerai.model.Difficulty
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
@@ -11,9 +13,10 @@ sealed class PlayerArchetype {
     abstract val aiNames: List<String>
 
     abstract fun createProfile(): PlayerProfile
-    abstract fun getOpenRange(position: Position): Set<String>
-    abstract fun getFacingRaiseRange(position: Position): Set<String>
-    abstract fun getFacing3BetRange(): Set<String>
+    abstract fun getOpenCutoff(position: Position): Int
+    abstract fun getFacingRaiseCutoff(position: Position): Int
+    abstract fun getFacing3BetCutoff(): Int
+    abstract fun getGameContextAdjustment(context: GameContext, scenario: Scenario): Int
     abstract fun buildSystemPrompt(profile: PlayerProfile): String
 
     companion object {

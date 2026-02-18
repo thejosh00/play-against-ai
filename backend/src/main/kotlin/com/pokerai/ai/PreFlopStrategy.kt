@@ -4,6 +4,7 @@ import com.pokerai.model.*
 import com.pokerai.model.archetype.*
 import kotlin.random.Random
 
+
 enum class Scenario { OPEN, FACING_RAISE, FACING_3BET }
 
 /**
@@ -24,7 +25,12 @@ fun Int.roundBet(): Int {
 
 class PreFlopStrategy {
 
-    fun decide(player: Player, state: GameState): Action {
+    companion object {
+        /** Fuzz can only extend this many hands beyond the cutoff */
+        const val FUZZ_BOUND = 10
+    }
+
+    fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): Action {
         val holeCards = player.holeCards ?: error("AI player ${player.name} has no hole cards")
         val profile = player.profile ?: error("AI player ${player.name} has no profile")
         val archetype = profile.archetype
@@ -33,29 +39,29 @@ class PreFlopStrategy {
 
         val effectiveBBs = (player.chips + player.currentBet).toDouble() / state.bigBlind
 
-        val baseRange = when (scenario) {
-            Scenario.OPEN -> archetype.getOpenRange(player.position)
-            Scenario.FACING_RAISE -> archetype.getFacingRaiseRange(player.position)
-            Scenario.FACING_3BET -> archetype.getFacing3BetRange()
+        val baseCutoff = when (scenario) {
+            Scenario.OPEN -> archetype.getOpenCutoff(player.position)
+            Scenario.FACING_RAISE -> archetype.getFacingRaiseCutoff(player.position)
+            Scenario.FACING_3BET -> archetype.getFacing3BetCutoff()
         }
-        val adjustment = computeRangeAdjustment(player, state, scenario)
-        val range = if (adjustment != 0) {
-            HandRankings.adjustRange(baseRange, adjustment)
-        } else {
-            baseRange
-        }
+        val gameContext = GameContext.from(config, state, tournamentState)
+        val contextAdjustment = archetype.getGameContextAdjustment(gameContext, scenario)
+        val situationalAdjustment = computeRangeAdjustment(player, state, scenario)
+        val adjustment = situationalAdjustment + contextAdjustment
+        val cutoff = (baseCutoff + adjustment).coerceIn(1, HandRankings.RANKED_HANDS.size)
+        val range = HandRankings.topN(cutoff)
+        val handIndex = HandRankings.indexOf(hand)
+        val inRange = handIndex < cutoff
 
         // Short-stack push/fold: ≤10 BBs means shove or fold
         if (effectiveBBs <= 10) {
-            val inRange = hand in range || Random.nextDouble() < profile.rangeFuzzProb
-            return if (inRange) Action.allIn(player.chips) else Action.fold()
+            val fuzzIn = !inRange && handIndex < cutoff + FUZZ_BOUND && Random.nextDouble() < profile.rangeFuzzProb
+            return if (inRange || fuzzIn) Action.allIn(player.chips) else Action.fold()
         }
 
-        val inRange = hand in range
-
-        // Range fuzz: occasionally play outside range or fold inside range
+        // Range fuzz: occasionally play slightly outside range or fold inside range
         val fuzzedInRange = if (!inRange) {
-            Random.nextDouble() < profile.rangeFuzzProb
+            handIndex < cutoff + FUZZ_BOUND && Random.nextDouble() < profile.rangeFuzzProb
         } else {
             !shouldFuzz(profile.rangeFuzzProb)
         }

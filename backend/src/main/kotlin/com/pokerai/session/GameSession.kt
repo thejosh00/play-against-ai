@@ -143,7 +143,7 @@ class GameSession(
                 sendState()
                 // AI thinking delay
                 delay(aiThinkingDelayMs.random())
-                val action = aiService.decide(player, s)
+                val action = aiService.decide(player, s, config, tournamentState)
                 GameEngine.applyAction(s, nextToAct, action)
                 sendActionPerformed(player, action)
             }

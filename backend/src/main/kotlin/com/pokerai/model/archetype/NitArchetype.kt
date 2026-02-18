@@ -1,5 +1,9 @@
 package com.pokerai.model.archetype
 
+import com.pokerai.ai.GameContext
+import com.pokerai.ai.Scenario
+import com.pokerai.ai.TournamentStage
+import com.pokerai.model.Difficulty
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
 
@@ -27,47 +31,37 @@ data object NitArchetype : PlayerArchetype() {
         raiseMultiplier = randomBetween(2.0, 2.5)
     )
 
-    override fun getOpenRange(position: Position): Set<String> = when (position) {
-        Position.UTG, Position.UTG1 -> setOf(
-            "AA", "KK", "QQ", "JJ", "AKs", "AQs", "AKo"
-        )
-        Position.LJ, Position.MP -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT",
-            "AKs", "AQs", "AJs", "KQs",
-            "AKo", "AQo"
-        )
-        Position.HJ, Position.CO -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99",
-            "AKs", "AQs", "AJs", "ATs", "KQs", "KJs",
-            "AKo", "AQo", "AJo"
-        )
-        Position.BTN -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99", "88",
-            "AKs", "AQs", "AJs", "ATs", "KQs", "KJs", "KTs", "QJs",
-            "AKo", "AQo", "AJo", "KQo"
-        )
-        Position.SB -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99",
-            "AKs", "AQs", "AJs", "ATs", "KQs", "KJs",
-            "AKo", "AQo", "AJo"
-        )
-        Position.BB -> setOf(
-            "AA", "KK", "QQ", "JJ",
-            "AKs", "AQs",
-            "AKo"
-        )
+    override fun getGameContextAdjustment(context: GameContext, scenario: Scenario): Int {
+        var adj = 0
+        if (context.rakeEnabled) adj -= 1
+        when (context.tournamentStage) {
+            TournamentStage.EARLY -> {}
+            TournamentStage.MIDDLE -> adj -= 2
+            TournamentStage.BUBBLE -> adj -= 3
+            TournamentStage.FINAL_TABLE -> adj -= 2
+            TournamentStage.HEADS_UP -> adj += 1
+            null -> {}
+        }
+        when (context.difficulty) {
+            Difficulty.LOW -> adj -= 1
+            Difficulty.HIGH -> adj += 1
+            Difficulty.MEDIUM -> {}
+        }
+        return adj
     }
 
-    override fun getFacingRaiseRange(position: Position): Set<String> = setOf(
-        "AA", "KK", "QQ", "JJ",
-        "AKs", "AQs",
-        "AKo"
-    )
+    override fun getOpenCutoff(position: Position): Int = when (position) {
+        Position.UTG, Position.UTG1 -> 7
+        Position.LJ, Position.MP -> 11
+        Position.HJ, Position.CO -> 15
+        Position.BTN -> 19
+        Position.SB -> 15
+        Position.BB -> 7
+    }
 
-    override fun getFacing3BetRange(): Set<String> = setOf(
-        "AA", "KK", "QQ",
-        "AKs", "AKo"
-    )
+    override fun getFacingRaiseCutoff(position: Position): Int = 7
+
+    override fun getFacing3BetCutoff(): Int = 5
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a tight-passive poker player. Your strategy:

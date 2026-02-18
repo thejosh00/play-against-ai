@@ -1,5 +1,8 @@
 package com.pokerai.model.archetype
 
+import com.pokerai.ai.GameContext
+import com.pokerai.ai.Scenario
+import com.pokerai.ai.TournamentStage
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
 
@@ -27,55 +30,33 @@ data object SharkArchetype : PlayerArchetype() {
         raiseMultiplier = randomBetween(2.5, 3.5)
     )
 
-    override fun getOpenRange(position: Position): Set<String> = when (position) {
-        Position.UTG, Position.UTG1 -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99",
-            "AKs", "AQs", "AJs", "ATs", "KQs", "KJs",
-            "AKo", "AQo"
-        )
-        Position.LJ, Position.MP -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77",
-            "AKs", "AQs", "AJs", "ATs", "A9s", "KQs", "KJs", "KTs", "QJs", "JTs",
-            "AKo", "AQo", "AJo", "KQo"
-        )
-        Position.HJ, Position.CO -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55",
-            "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A5s", "A4s",
-            "KQs", "KJs", "KTs", "K9s", "QJs", "QTs", "JTs", "T9s", "98s", "87s", "76s",
-            "AKo", "AQo", "AJo", "ATo", "KQo", "KJo"
-        )
-        Position.BTN -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22",
-            "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s",
-            "KQs", "KJs", "KTs", "K9s", "K8s", "K7s",
-            "QJs", "QTs", "Q9s", "JTs", "J9s", "T9s", "T8s", "98s", "97s", "87s", "76s", "65s", "54s",
-            "AKo", "AQo", "AJo", "ATo", "A9o", "KQo", "KJo", "KTo", "QJo"
-        )
-        Position.SB -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99", "88", "77", "66", "55",
-            "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A5s", "A4s",
-            "KQs", "KJs", "KTs", "K9s", "QJs", "QTs", "JTs", "T9s", "98s", "87s",
-            "AKo", "AQo", "AJo", "ATo", "KQo", "KJo"
-        )
-        Position.BB -> setOf(
-            "AA", "KK", "QQ", "JJ", "TT", "99", "88",
-            "AKs", "AQs", "AJs", "ATs", "A9s", "KQs", "KJs", "QJs", "JTs",
-            "AKo", "AQo", "AJo"
-        )
+    override fun getGameContextAdjustment(context: GameContext, scenario: Scenario): Int {
+        var adj = 0
+        if (context.antesActive) adj += 3
+        if (context.rakeEnabled) adj -= 1
+        when (context.tournamentStage) {
+            TournamentStage.EARLY -> {}
+            TournamentStage.MIDDLE -> adj -= 1
+            TournamentStage.BUBBLE -> adj += 2
+            TournamentStage.FINAL_TABLE -> {}
+            TournamentStage.HEADS_UP -> adj += 3
+            null -> {}
+        }
+        return adj
     }
 
-    override fun getFacingRaiseRange(position: Position): Set<String> = setOf(
-        "AA", "KK", "QQ", "JJ", "TT", "99", "88",
-        "AKs", "AQs", "AJs", "ATs", "A5s", "A4s",
-        "KQs", "KJs", "QJs", "JTs", "T9s",
-        "AKo", "AQo", "AJo"
-    )
+    override fun getOpenCutoff(position: Position): Int = when (position) {
+        Position.UTG, Position.UTG1 -> 14
+        Position.LJ, Position.MP -> 22
+        Position.HJ, Position.CO -> 36
+        Position.BTN -> 53
+        Position.SB -> 34
+        Position.BB -> 19
+    }
 
-    override fun getFacing3BetRange(): Set<String> = setOf(
-        "AA", "KK", "QQ", "JJ", "TT",
-        "AKs", "AQs", "A5s", "A4s",
-        "AKo"
-    )
+    override fun getFacingRaiseCutoff(position: Position): Int = 21
+
+    override fun getFacing3BetCutoff(): Int = 10
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a balanced, GTO-oriented poker player. Your strategy:

@@ -50,87 +50,50 @@ class HandRankingsTest {
     }
 
     @Test
-    fun `rangeToCutoff finds max index plus one`() {
-        val range = setOf("AA", "KK", "QQ")
-        assertEquals(3, HandRankings.rangeToCutoff(range))
-    }
-
-    @Test
-    fun `rangeToCutoff handles empty range`() {
-        assertEquals(0, HandRankings.rangeToCutoff(emptySet()))
-    }
-
-    @Test
-    fun `adjustRange widens range with positive adjustment`() {
-        val base = setOf("AA", "KK", "QQ") // cutoff = 3
-        val adjusted = HandRankings.adjustRange(base, 2)
-        // cutoff 3 + 2 = 5 -> top 5
-        assertEquals(HandRankings.topN(5), adjusted)
-    }
-
-    @Test
-    fun `adjustRange tightens range with negative adjustment`() {
-        val base = setOf("AA", "KK", "QQ", "JJ", "AKs") // cutoff = 5
-        val adjusted = HandRankings.adjustRange(base, -3)
-        // cutoff 5 - 3 = 2 -> top 2
-        assertEquals(setOf("AA", "KK"), adjusted)
-    }
-
-    @Test
-    fun `adjustRange clamps at lower bound`() {
-        val base = setOf("AA", "KK") // cutoff = 2
-        val adjusted = HandRankings.adjustRange(base, -10)
-        // cutoff 2 - 10 = -8, clamped to 1 -> top 1
-        assertEquals(setOf("AA"), adjusted)
-    }
-
-    @Test
-    fun `adjustRange clamps at upper bound`() {
-        val base = HandRankings.topN(165) // cutoff = 165
-        val adjusted = HandRankings.adjustRange(base, 20)
-        // cutoff 165 + 20 = 185, clamped to 169
-        assertEquals(169, adjusted.size)
-    }
-
-    @Test
-    fun `all archetype facing-raise hands exist in rankings`() {
+    fun `all archetype cutoffs are in valid range`() {
         for (archetype in PlayerArchetype.all) {
             for (position in Position.entries) {
-                val range = archetype.getFacingRaiseRange(position)
-                for (hand in range) {
-                    assertTrue(
-                        hand in HandRankings.RANKED_HANDS,
-                        "Hand $hand from ${archetype.displayName} facing-raise range not found in rankings"
-                    )
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `all archetype facing-3bet hands exist in rankings`() {
-        for (archetype in PlayerArchetype.all) {
-            val range = archetype.getFacing3BetRange()
-            for (hand in range) {
+                val openCutoff = archetype.getOpenCutoff(position)
                 assertTrue(
-                    hand in HandRankings.RANKED_HANDS,
-                    "Hand $hand from ${archetype.displayName} facing-3bet range not found in rankings"
+                    openCutoff in 1..169,
+                    "${archetype.displayName} open cutoff $openCutoff at $position out of range"
+                )
+                val facingRaiseCutoff = archetype.getFacingRaiseCutoff(position)
+                assertTrue(
+                    facingRaiseCutoff in 1..169,
+                    "${archetype.displayName} facing-raise cutoff $facingRaiseCutoff at $position out of range"
                 )
             }
+            val facing3BetCutoff = archetype.getFacing3BetCutoff()
+            assertTrue(
+                facing3BetCutoff in 1..169,
+                "${archetype.displayName} facing-3bet cutoff $facing3BetCutoff out of range"
+            )
         }
     }
 
     @Test
-    fun `all archetype open-raise hands exist in rankings`() {
+    fun `BTN open cutoff greater than UTG open cutoff for all archetypes`() {
         for (archetype in PlayerArchetype.all) {
+            val btnCutoff = archetype.getOpenCutoff(Position.BTN)
+            val utgCutoff = archetype.getOpenCutoff(Position.UTG)
+            assertTrue(
+                btnCutoff > utgCutoff,
+                "${archetype.displayName} BTN cutoff ($btnCutoff) should be > UTG cutoff ($utgCutoff)"
+            )
+        }
+    }
+
+    @Test
+    fun `facing 3bet cutoff is at most facing raise cutoff for all archetypes`() {
+        for (archetype in PlayerArchetype.all) {
+            val facing3Bet = archetype.getFacing3BetCutoff()
             for (position in Position.entries) {
-                val range = archetype.getOpenRange(position)
-                for (hand in range) {
-                    assertTrue(
-                        hand in HandRankings.RANKED_HANDS,
-                        "Hand $hand from ${archetype.displayName} open range at $position not found in rankings"
-                    )
-                }
+                val facingRaise = archetype.getFacingRaiseCutoff(position)
+                assertTrue(
+                    facing3Bet <= facingRaise,
+                    "${archetype.displayName} facing-3bet cutoff ($facing3Bet) should be <= facing-raise cutoff ($facingRaise) at $position"
+                )
             }
         }
     }

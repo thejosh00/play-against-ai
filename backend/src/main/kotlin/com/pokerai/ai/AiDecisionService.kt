@@ -6,9 +6,9 @@ class AiDecisionService(
     private val preFlopStrategy: PreFlopStrategy = PreFlopStrategy(),
     private val llmClient: LlmClient
 ) {
-    suspend fun decide(player: Player, state: GameState): Action {
+    suspend fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): Action {
         val action = if (state.phase == GamePhase.PRE_FLOP) {
-            preFlopStrategy.decide(player, state)
+            preFlopStrategy.decide(player, state, config, tournamentState)
         } else {
             llmClient.getDecision(player, state)
         }
