@@ -1,7 +1,7 @@
 package com.pokerai.plugins
 
 import com.pokerai.ai.AiDecisionService
-import com.pokerai.ai.OllamaLlmClient
+import com.pokerai.ai.LlmClient
 import com.pokerai.session.GameSession
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -13,14 +13,14 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-fun Application.configureRouting(ollamaClient: OllamaLlmClient, aiService: AiDecisionService) {
+fun Application.configureRouting(llmClient: LlmClient, aiService: AiDecisionService) {
     routing {
         get("/health") {
-            val ollamaConnected = ollamaClient.isAvailable()
+            val llmConnected = llmClient.isAvailable()
             call.respondText(
                 buildJsonObject {
                     put("status", "ok")
-                    put("ollamaConnected", ollamaConnected)
+                    put("llmConnected", llmConnected)
                 }.toString(),
                 ContentType.Application.Json
             )

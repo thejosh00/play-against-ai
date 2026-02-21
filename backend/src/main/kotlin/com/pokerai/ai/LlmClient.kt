@@ -6,4 +6,5 @@ import com.pokerai.model.Player
 
 interface LlmClient {
     suspend fun getDecision(player: Player, state: GameState): Action
+    suspend fun isAvailable(): Boolean
 }

@@ -37,6 +37,8 @@ class GameIntegrationTest {
                 Action.check()
             }
         }
+
+        override suspend fun isAvailable(): Boolean = true
     }
 
     private val aiService = AiDecisionService(
