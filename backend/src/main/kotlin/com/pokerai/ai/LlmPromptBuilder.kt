@@ -1,6 +1,7 @@
 package com.pokerai.ai
 
 import com.pokerai.model.*
+import kotlin.random.Random
 
 object LlmPromptBuilder {
 
@@ -40,12 +41,18 @@ object LlmPromptBuilder {
 
         val actionsThisStreet = state.actionHistory
             .filter { it.phase == state.phase }
-            .joinToString(", ") { "${it.playerName}: ${it.action.describe()}" }
+            .joinToString(", ") {
+                val label = if (it.playerIndex == player.index) "You" else it.playerName
+                "$label: ${it.action.describe()}"
+            }
             .ifEmpty { "No action yet" }
 
         val activePlayers = state.players
             .filter { !it.isFolded && !it.isSittingOut }
-            .joinToString(", ") { "${it.name} (${it.chips} chips, pos ${it.position.label})" }
+            .joinToString(", ") {
+                val label = if (it.index == player.index) "You" else it.name
+                "$label (${it.chips} chips, pos ${it.position.label})"
+            }
 
         return """
             Current game state:
@@ -60,6 +67,7 @@ object LlmPromptBuilder {
             - Players in hand: $activePlayers
             - Action this street: $actionsThisStreet
             - Suggested bet sizes: 1/3 pot = ${state.pot / 3}, 1/2 pot = ${state.pot / 2}, 2/3 pot = ${state.pot * 2 / 3}, pot = ${state.pot}
+            - Instinct: ${Random.nextInt(1, 101)}
 
             What is your action?
         """.trimIndent()

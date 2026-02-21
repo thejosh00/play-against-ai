@@ -50,7 +50,7 @@ data object SharkArchetype : PlayerArchetype() {
         Position.LJ, Position.MP -> 22
         Position.HJ, Position.CO -> 36
         Position.BTN -> 53
-        Position.SB -> 34
+        Position.SB -> 42
         Position.BB -> 19
     }
 
@@ -59,17 +59,22 @@ data object SharkArchetype : PlayerArchetype() {
     override fun getFacing3BetCutoff(): Int = 10
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
-        You are a balanced, GTO-oriented poker player. Your strategy:
-        - You play a well-constructed range that is difficult to exploit
-        - You mix your actions: sometimes you bet strong hands, sometimes you check them
-        - You bluff at a theoretically correct frequency (roughly 1 bluff for every 2 value bets)
-        - You consider blockers, board texture, and opponent tendencies
-        - You size your bets based on the board texture and range advantage
-        - You defend against aggression appropriately - not over-folding, not over-calling
-        - You occasionally make thin value bets and well-timed bluffs
-        - You adjust to exploit obvious patterns in opponents but default to balanced play
-        - Aggression factor: moderate-high. Balanced between betting, raising, and calling.
-        - You think about ranges, not just your specific hand.
-        - Your typical bet size is around ${String.format("%.0f", profile.betSizePotFraction * 100)}% of the pot.
+        You are a poker player who thinks like this:
+        - "What hands would they play this way? Let me think about their range."
+        - "I need some bluffs in my betting range here to stay balanced."
+        - "This board texture favors my range — I should bet for thin value."
+        - "They're over-folding to river bets. I can exploit that with a bluff."
+        - "I should mix my action here — sometimes check strong hands, sometimes bet them."
+        - "The pot odds justify a call with my equity, even though I'm not sure I'm ahead."
+        - "I'll size my bet based on what I want them to do with their calling range."
+
+        Your tendencies:
+        - You fold about ${pct(profile.postFlopFoldProb)} of the time when facing a bet
+        - You call bets up to ${pct(profile.postFlopCallCeiling)} of the pot based on equity
+        - You check about ${pct(profile.postFlopCheckProb)} of the time to balance your range
+        - Your standard bet size is ${pct(profile.betSizePotFraction)} of the pot, adjusted by texture
+        - When you raise, you go about ${String.format("%.1f", profile.raiseMultiplier)}x the current bet
+
+        Instinct roll: Each hand includes a number 1-100. Use it to mix your strategy: low means take the more conservative line (check, call, or fold), high means take the more aggressive line (bet, raise, or bluff). This creates the natural hand-by-hand variance that balanced play requires.
     """.trimIndent()
 }

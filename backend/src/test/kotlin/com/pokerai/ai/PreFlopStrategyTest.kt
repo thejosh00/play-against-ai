@@ -325,6 +325,31 @@ class PreFlopStrategyTest {
         assertTrue(adjustedCutoff < baseCutoff, "Rake should tighten TAG's open range")
     }
 
+    // --- Heads-up rankings ---
+
+    @Test
+    fun `HU rankings used when only two active players`() {
+        // A7o is ~index 101 in standard rankings but ~41 in HU rankings.
+        // TAG SB cutoff is 33. With standard rankings A7o is out of range;
+        // with HU rankings it's in range.
+        val a7oStandard = HandRankings.indexOf("A7o")
+        val a7oHu = HandRankings.huIndexOf("A7o")
+        val sbCutoff = TagArchetype.getOpenCutoff(Position.SB) // 33
+
+        assertTrue(a7oStandard >= sbCutoff, "A7o should be outside TAG SB range with standard rankings")
+        assertTrue(a7oHu < sbCutoff, "A7o should be inside TAG SB range with HU rankings")
+    }
+
+    @Test
+    fun `HU ranked hands contains all 169 hands`() {
+        assertEquals(169, HandRankings.HU_RANKED_HANDS.size)
+        assertEquals(
+            HandRankings.RANKED_HANDS.toSet(),
+            HandRankings.HU_RANKED_HANDS.toSet(),
+            "HU rankings should contain exactly the same hands as standard rankings"
+        )
+    }
+
     @Test
     fun `context adjustment has no effect with null config`() {
         val state = makeState(players = emptyList())

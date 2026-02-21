@@ -53,7 +53,7 @@ object GameEngine {
                 bigBlind = config.stakes.bigBlind
             }
             is GameConfig.Tournament -> {
-                startingChips = 10_000
+                startingChips = config.startingBBs * 50
                 smallBlind = 25
                 bigBlind = 50
             }

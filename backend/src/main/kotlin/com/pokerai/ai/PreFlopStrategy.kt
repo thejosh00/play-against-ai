@@ -23,7 +23,7 @@ fun Int.roundBet(): Int {
     return ((this + increment / 2) / increment) * increment
 }
 
-class PreFlopStrategy {
+class PreFlopStrategy(private val random: Random = Random) {
 
     companion object {
         /** Fuzz can only extend this many hands beyond the cutoff */
@@ -49,19 +49,19 @@ class PreFlopStrategy {
         val situationalAdjustment = computeRangeAdjustment(player, state, scenario)
         val adjustment = situationalAdjustment + contextAdjustment
         val cutoff = (baseCutoff + adjustment).coerceIn(1, HandRankings.RANKED_HANDS.size)
-        val range = HandRankings.topN(cutoff)
-        val handIndex = HandRankings.indexOf(hand)
+        val isHeadsUp = state.activePlayers.size <= 2
+        val handIndex = if (isHeadsUp) HandRankings.huIndexOf(hand) else HandRankings.indexOf(hand)
         val inRange = handIndex < cutoff
 
         // Short-stack push/fold: ≤10 BBs means shove or fold
         if (effectiveBBs <= 10) {
-            val fuzzIn = !inRange && handIndex < cutoff + FUZZ_BOUND && Random.nextDouble() < profile.rangeFuzzProb
+            val fuzzIn = !inRange && handIndex < cutoff + FUZZ_BOUND && random.nextDouble() < profile.rangeFuzzProb
             return if (inRange || fuzzIn) Action.allIn(player.chips) else Action.fold()
         }
 
         // Range fuzz: occasionally play slightly outside range or fold inside range
         val fuzzedInRange = if (!inRange) {
-            handIndex < cutoff + FUZZ_BOUND && Random.nextDouble() < profile.rangeFuzzProb
+            handIndex < cutoff + FUZZ_BOUND && random.nextDouble() < profile.rangeFuzzProb
         } else {
             !shouldFuzz(profile.rangeFuzzProb)
         }
@@ -72,7 +72,7 @@ class PreFlopStrategy {
 
         // Short-stack 10-20 BBs: 3-bets become shoves
         if (effectiveBBs <= 20 && scenario == Scenario.FACING_RAISE) {
-            return if (Random.nextDouble() < profile.threeBetProb) {
+            return if (random.nextDouble() < profile.threeBetProb) {
                 Action.allIn(player.chips)
             } else {
                 val callAmount = state.currentBetLevel - player.currentBet
@@ -163,7 +163,7 @@ class PreFlopStrategy {
     }
 
     private fun decideOpen(player: Player, state: GameState, profile: PlayerProfile): Action {
-        return if (Random.nextDouble() < profile.openRaiseProb) {
+        return if (random.nextDouble() < profile.openRaiseProb) {
             val sizing = openRaiseSize(player, profile, state)
             if (sizing >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
@@ -181,7 +181,7 @@ class PreFlopStrategy {
     }
 
     private fun decideFacingRaise(player: Player, state: GameState, profile: PlayerProfile): Action {
-        return if (Random.nextDouble() < profile.threeBetProb) {
+        return if (random.nextDouble() < profile.threeBetProb) {
             val raiseSize = threeBetSize(profile, state)
             if (raiseSize >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
@@ -199,7 +199,7 @@ class PreFlopStrategy {
     }
 
     private fun decideFacing3Bet(player: Player, state: GameState, profile: PlayerProfile): Action {
-        return if (Random.nextDouble() < profile.fourBetProb) {
+        return if (random.nextDouble() < profile.fourBetProb) {
             val raiseSize = fourBetSize(profile, state)
             if (raiseSize >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
@@ -250,8 +250,8 @@ class PreFlopStrategy {
         Position.BB -> 1.00
     }
 
-    private fun shouldFuzz(probability: Double): Boolean = Random.nextDouble() < probability
+    private fun shouldFuzz(probability: Double): Boolean = random.nextDouble() < probability
 
     private fun randomBetween(min: Double, max: Double): Double =
-        min + Random.nextDouble() * (max - min)
+        min + random.nextDouble() * (max - min)
 }

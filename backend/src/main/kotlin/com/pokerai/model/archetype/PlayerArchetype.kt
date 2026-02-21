@@ -81,3 +81,5 @@ sealed class PlayerArchetype {
 
 fun randomBetween(min: Double, max: Double): Double =
     min + Random.nextDouble() * (max - min)
+
+fun pct(value: Double): String = "${String.format("%.0f", value * 100)}%"

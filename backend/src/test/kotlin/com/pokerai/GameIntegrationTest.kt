@@ -2,10 +2,12 @@ package com.pokerai
 
 import com.pokerai.ai.AiDecisionService
 import com.pokerai.ai.LlmClient
+import com.pokerai.ai.PreFlopStrategy
 import com.pokerai.dto.ClientMessage
 import com.pokerai.dto.ServerMessage
 import com.pokerai.model.*
 import com.pokerai.session.GameSession
+import kotlin.random.Random
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.server.application.*
@@ -37,7 +39,10 @@ class GameIntegrationTest {
         }
     }
 
-    private val aiService = AiDecisionService(llmClient = AlwaysCallLlmClient())
+    private val aiService = AiDecisionService(
+        preFlopStrategy = PreFlopStrategy(Random(42)),
+        llmClient = AlwaysCallLlmClient()
+    )
 
     private fun Application.configureTestApp() {
         install(WebSockets) {

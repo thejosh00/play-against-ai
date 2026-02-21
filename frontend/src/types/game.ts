@@ -116,7 +116,7 @@ export type TournamentBuyin = 'HUNDRED' | 'FIVE_HUNDRED' | 'FIFTEEN_HUNDRED';
 
 export type GameConfig =
   | { type: 'cash'; stakes: CashStakes; rakeEnabled: boolean; tableSize: number }
-  | { type: 'tournament'; buyin: TournamentBuyin; playerCount: number; antesEnabled: boolean; tableSize: number };
+  | { type: 'tournament'; buyin: TournamentBuyin; playerCount: number; antesEnabled: boolean; tableSize: number; startingBBs: number };
 
 export type ServerMessage =
   | GameStateUpdate

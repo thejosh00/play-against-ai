@@ -49,11 +49,13 @@ sealed class GameConfig {
         val buyin: TournamentBuyin,
         val playerCount: Int,
         val antesEnabled: Boolean = false,
-        override val tableSize: Int = 6
+        override val tableSize: Int = 6,
+        val startingBBs: Int = 200
     ) : GameConfig() {
         init {
             require(playerCount in setOf(6, 45, 180, 1000)) { "Invalid tournament size: $playerCount" }
             require(tableSize in setOf(6, 9)) { "Invalid table size: $tableSize" }
+            require(startingBBs in setOf(10, 25, 50, 100, 200)) { "Invalid starting BBs: $startingBBs" }
         }
 
         override val difficulty get() = when (buyin) {

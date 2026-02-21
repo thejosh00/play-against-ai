@@ -47,7 +47,7 @@ class OllamaLlmClient(
             })
         }
         engine {
-            requestTimeout = 30_000
+            requestTimeout = 120_000
         }
     }
 

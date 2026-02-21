@@ -16,12 +16,14 @@ const CASH_OPTIONS: { value: CashStakes; label: string; desc: string }[] = [
 ];
 
 const TOURNAMENT_OPTIONS: { value: TournamentBuyin; label: string; desc: string }[] = [
-  { value: 'HUNDRED', label: '$100', desc: '10,000 chips - Easy' },
-  { value: 'FIVE_HUNDRED', label: '$500', desc: '10,000 chips - Medium' },
-  { value: 'FIFTEEN_HUNDRED', label: '$1,500', desc: '10,000 chips - Hard' },
+  { value: 'HUNDRED', label: '$100', desc: '8 hands/level - Easy' },
+  { value: 'FIVE_HUNDRED', label: '$500', desc: '12 hands/level - Medium' },
+  { value: 'FIFTEEN_HUNDRED', label: '$1,500', desc: '15 hands/level - Hard' },
 ];
 
 const PLAYER_COUNTS = [6, 45, 180, 1000] as const;
+
+const STARTING_BB_OPTIONS = [10, 25, 50, 100, 200] as const;
 
 export function Lobby({ onStartGame, connected }: LobbyProps) {
   const [gameType, setGameType] = useState<GameType>(null);
@@ -31,12 +33,13 @@ export function Lobby({ onStartGame, connected }: LobbyProps) {
   const [antesEnabled, setAntesEnabled] = useState(false);
   const [playerCount, setPlayerCount] = useState<number>(45);
   const [tableSize, setTableSize] = useState<number>(6);
+  const [startingBBs, setStartingBBs] = useState<number>(200);
 
   const handleStart = () => {
     if (gameType === 'cash') {
       onStartGame({ type: 'cash', stakes: cashStakes, rakeEnabled, tableSize });
     } else if (gameType === 'tournament') {
-      onStartGame({ type: 'tournament', buyin: tournamentBuyin, playerCount, antesEnabled, tableSize });
+      onStartGame({ type: 'tournament', buyin: tournamentBuyin, playerCount, antesEnabled, tableSize, startingBBs });
     }
   };
 
@@ -157,6 +160,20 @@ export function Lobby({ onStartGame, connected }: LobbyProps) {
                     onClick={() => setPlayerCount(count)}
                   >
                     {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="lobby-player-count">
+              <span>Starting Stack:</span>
+              <div className="lobby-count-options">
+                {STARTING_BB_OPTIONS.map((bb) => (
+                  <button
+                    key={bb}
+                    className={`lobby-count-btn ${startingBBs === bb ? 'selected' : ''}`}
+                    onClick={() => setStartingBBs(bb)}
+                  >
+                    {bb}bb
                   </button>
                 ))}
               </div>

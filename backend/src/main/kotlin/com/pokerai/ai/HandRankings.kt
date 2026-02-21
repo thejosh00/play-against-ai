@@ -51,10 +51,65 @@ object HandRankings {
         "J2o", "T3o", "92o", "T2o", "72o"
     )
 
+    /**
+     * All 169 unique starting hands ordered by heads-up equity vs a random hand.
+     * Ace-x and King-x offsuit hands rank much higher than in multiway rankings;
+     * suited connectors and small pairs drop.
+     */
+    val HU_RANKED_HANDS: List<String> = listOf(
+        // Tier 1: Premium pairs and AK
+        "AA", "KK", "QQ", "JJ", "AKs",
+        // Tier 2: Strong broadways and TT-99
+        "AQs", "TT", "AKo", "AJs", "KQs",
+        "ATs", "AQo", "99", "KJs", "A9s",
+        "KTs", "AJo", "A8s", "KQo", "A7s",
+        // Tier 3: Ace-x and 88; ace-high wins unimproved HU
+        "88", "ATo", "A6s", "A5s", "A4s",
+        "A3s", "A2s", "QJs", "QTs", "A9o",
+        "A8o", "A7o", "KJo", "K9s", "77",
+        "K8s", "K7s", "A6o", "A5o", "JTs",
+        // Tier 4: Ace-low offsuit, king suited/offsuit
+        "QJo", "K6s", "KTo", "A4o", "K5s",
+        "66", "A3o", "K4s", "A2o", "K3s",
+        "K2s", "T9s", "Q9s", "J9s", "98s",
+        "Q8s", "J8s", "QTo", "K9o",
+        // Tier 5: Suited connectors, low pairs, king-x offsuit
+        "JTo", "T8s", "87s", "55", "K8o",
+        "97s", "76s", "Q7s", "K7o", "Q6s",
+        "44", "K6o", "J7s", "Q5s", "65s",
+        "86s", "K5o", "T7s", "Q4s", "K4o",
+        "96s", "Q3s", "Q9o", "J9o", "33",
+        "K3o", "54s", "Q2s", "75s", "K2o",
+        // Tier 6: Marginal hands
+        "T9o", "J6s", "85s", "Q8o", "64s",
+        "J5s", "22", "98o", "87o", "J4s",
+        "T6s", "53s", "J3s", "Q7o", "43s",
+        "95s", "93s", "74s", "J2s", "76o",
+        "Q6o", "T5s", "94s", "63s", "84s",
+        "Q5o", "52s",
+        // Tier 7: Weak hands
+        "65o", "T4s", "86o", "Q4o", "42s",
+        "T3s", "73s", "97o", "Q3o", "54o",
+        "83s", "J8o", "T2s", "Q2o", "75o",
+        "92s", "32s", "82s", "96o", "J7o",
+        "T8o", "62s", "72s", "64o", "85o",
+        // Tier 8: Junk
+        "53o", "J6o", "43o", "T7o", "74o",
+        "J5o", "95o", "63o", "84o", "J4o",
+        "52o", "94o", "42o", "T6o", "J3o",
+        "32o", "73o", "83o", "J2o", "T5o",
+        "62o", "T4o", "93o", "72o", "82o",
+        "92o", "T3o", "T2o"
+    )
+
     private val indexMap: Map<String, Int> = RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
+    private val huIndexMap: Map<String, Int> = HU_RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
 
     fun indexOf(hand: String): Int =
         indexMap[hand] ?: error("Unknown hand notation: $hand")
+
+    fun huIndexOf(hand: String): Int =
+        huIndexMap[hand] ?: error("Unknown hand notation: $hand")
 
     fun topN(n: Int): Set<String> {
         val clamped = n.coerceIn(0, RANKED_HANDS.size)
