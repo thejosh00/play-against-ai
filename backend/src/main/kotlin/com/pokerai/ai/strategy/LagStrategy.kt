@@ -31,7 +31,7 @@ class LagStrategy : ArchetypeStrategy {
         val effectiveInstinct = adjustInstinct(ctx)
 
         return when (ctx.street) {
-            Street.PREFLOP -> decidePreflopLag(ctx, effectiveInstinct)
+            Street.PREFLOP -> error("ArchetypeStrategy should not be called preflop — use PreFlopStrategy")
             Street.FLOP -> decideFlopLag(ctx, effectiveInstinct)
             Street.TURN -> decideTurnLag(ctx, effectiveInstinct)
             Street.RIVER -> decideRiverLag(ctx, effectiveInstinct)
@@ -165,28 +165,6 @@ class LagStrategy : ArchetypeStrategy {
     }
 
     // ── Street handlers ──────────────────────────────────────────────
-
-    private fun decidePreflopLag(
-        ctx: DecisionContext,
-        instinct: Int
-    ): ActionDecision {
-        val tier = ctx.hand.tier
-        return when {
-            ctx.facingBet && tier == HandStrengthTier.MONSTER ->
-                raiseAction(ctx, ctx.profile.raiseMultiplier, 0.8, "3-betting with a monster")
-            ctx.facingBet && tier == HandStrengthTier.STRONG ->
-                if (instinct > 40) raiseAction(ctx, ctx.profile.raiseMultiplier, 0.6, "3-betting a strong hand")
-                else callAction(ctx, 0.6, "calling with a strong hand")
-            ctx.facingBet && tier == HandStrengthTier.MEDIUM ->
-                if (instinct > 60) raiseAction(ctx, ctx.profile.raiseMultiplier, 0.4, "light 3-bet")
-                else callAction(ctx, 0.5, "calling with a medium hand")
-            ctx.facingBet && tier == HandStrengthTier.WEAK ->
-                if (instinct > 80) raiseAction(ctx, ctx.profile.raiseMultiplier, 0.25, "bluff 3-bet")
-                else foldAction(0.6, "folding weak hand to a raise")
-            !ctx.facingBet -> raiseAction(ctx, 3.0, 0.7, "open raising")
-            else -> foldAction(0.5, "folding preflop")
-        }
-    }
 
     private fun decideFlopLag(
         ctx: DecisionContext,

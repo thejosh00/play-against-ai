@@ -973,41 +973,13 @@ class CallingStationStrategyTest {
         assertEquals(73, decision.action.amount)
     }
 
-    // ── Preflop fallback ──────────────────────────────────────────────
+    // ── Preflop throws ────────────────────────────────────────────────
 
     @Test
-    fun `preflop MONSTER facing bet with high instinct raises`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.MONSTER,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            instinct = 80
-        ))
-        assertEquals(ActionType.RAISE, decision.action.type)
-    }
-
-    @Test
-    fun `preflop MONSTER facing bet with normal instinct calls`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.MONSTER,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            instinct = 50
-        ))
-        assertEquals(ActionType.CALL, decision.action.type)
-    }
-
-    @Test
-    fun `preflop NOTHING facing bet folds`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.NOTHING,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30
-        ))
-        assertEquals(ActionType.FOLD, decision.action.type)
+    fun `preflop throws error`() {
+        assertFailsWith<IllegalStateException> {
+            strategy.decide(ctx(street = Street.PREFLOP))
+        }
     }
 
     // ── Desperate bluff sizing ────────────────────────────────────────

@@ -1057,30 +1057,13 @@ class NitStrategyTest {
             "Nit should call, not raise, with strong hand")
     }
 
-    // ── Preflop fallback ────────────────────────────────────────────
+    // ── Preflop throws ──────────────────────────────────────────────
 
     @Test
-    fun `preflop MONSTER facing bet raises`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.MONSTER,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            potSize = 45
-        ))
-        assertEquals(ActionType.RAISE, decision.action.type)
-    }
-
-    @Test
-    fun `preflop NOTHING facing bet folds`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.NOTHING,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            potSize = 45
-        ))
-        assertEquals(ActionType.FOLD, decision.action.type)
+    fun `preflop throws error`() {
+        assertFailsWith<IllegalStateException> {
+            strategy.decide(ctx(street = Street.PREFLOP))
+        }
     }
 
     // ── Call amounts ────────────────────────────────────────────────

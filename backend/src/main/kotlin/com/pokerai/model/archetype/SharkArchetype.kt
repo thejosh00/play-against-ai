@@ -3,6 +3,8 @@ package com.pokerai.model.archetype
 import com.pokerai.ai.GameContext
 import com.pokerai.ai.Scenario
 import com.pokerai.ai.TournamentStage
+import com.pokerai.ai.strategy.ArchetypeStrategy
+import com.pokerai.ai.strategy.SharkStrategy
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
 
@@ -44,6 +46,8 @@ data object SharkArchetype : PlayerArchetype() {
         }
         return adj
     }
+
+    override fun getStrategy(): ArchetypeStrategy = SharkStrategy()
 
     override fun getOpenCutoff(position: Position): Int = when (position) {
         Position.UTG, Position.UTG1 -> 14

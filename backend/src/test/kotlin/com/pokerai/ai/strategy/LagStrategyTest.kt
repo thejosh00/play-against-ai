@@ -948,30 +948,13 @@ class LagStrategyTest {
         assertNotEquals(ActionType.FOLD, lowSpr.action.type, "Low SPR favors aggression")
     }
 
-    // ── Preflop fallback ─────────────────────────────────────────────
+    // ── Preflop throws ────────────────────────────────────────────────
 
     @Test
-    fun `preflop MONSTER facing bet raises`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.MONSTER,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            potSize = 45,
-            instinct = 50
-        ))
-        assertEquals(ActionType.RAISE, decision.action.type)
-    }
-
-    @Test
-    fun `preflop not facing bet always open raises`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.NOTHING,
-            street = Street.PREFLOP,
-            facingBet = false,
-            instinct = 50
-        ))
-        assertEquals(ActionType.RAISE, decision.action.type, "LAG open raises everything")
+    fun `preflop throws error`() {
+        assertFailsWith<IllegalStateException> {
+            strategy.decide(ctx(street = Street.PREFLOP))
+        }
     }
 
     // ── Facing bets — various streets ────────────────────────────────

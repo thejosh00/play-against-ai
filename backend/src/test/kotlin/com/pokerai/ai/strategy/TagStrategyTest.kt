@@ -1111,52 +1111,13 @@ class TagStrategyTest {
         assertEquals(ActionType.CHECK, decision.action.type)
     }
 
-    // ── Preflop fallback ────────────────────────────────────────────
+    // ── Preflop throws ──────────────────────────────────────────────
 
     @Test
-    fun `preflop MONSTER facing bet raises`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.MONSTER,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            instinct = 50
-        ))
-        assertEquals(ActionType.RAISE, decision.action.type)
-    }
-
-    @Test
-    fun `preflop WEAK facing bet folds`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.WEAK,
-            street = Street.PREFLOP,
-            facingBet = true,
-            betToCall = 30,
-            instinct = 50
-        ))
-        assertEquals(ActionType.FOLD, decision.action.type)
-    }
-
-    @Test
-    fun `preflop not facing bet open raises with medium hand`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.MEDIUM,
-            street = Street.PREFLOP,
-            facingBet = false,
-            instinct = 50
-        ))
-        assertEquals(ActionType.RAISE, decision.action.type)
-    }
-
-    @Test
-    fun `preflop not facing bet folds nothing`() {
-        val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.NOTHING,
-            street = Street.PREFLOP,
-            facingBet = false,
-            instinct = 50
-        ))
-        assertEquals(ActionType.FOLD, decision.action.type)
+    fun `preflop throws error`() {
+        assertFailsWith<IllegalStateException> {
+            strategy.decide(ctx(street = Street.PREFLOP))
+        }
     }
 
     // ── Position awareness ──────────────────────────────────────────

@@ -35,7 +35,7 @@ class TagStrategy : ArchetypeStrategy {
         val effectiveTier = adjustTierForPotType(ctx)
 
         return when (ctx.street) {
-            Street.PREFLOP -> decidePreflopTag(ctx, effectiveTier, effectiveInstinct)
+            Street.PREFLOP -> error("ArchetypeStrategy should not be called preflop — use PreFlopStrategy")
             Street.FLOP -> decideFlopTag(ctx, effectiveTier, effectiveInstinct)
             Street.TURN -> decideTurnTag(ctx, effectiveTier, effectiveInstinct)
             Street.RIVER -> decideRiverTag(ctx, effectiveTier, effectiveInstinct)
@@ -209,31 +209,6 @@ class TagStrategy : ArchetypeStrategy {
         }
 
         return baseSizing * boardModifier * strengthModifier
-    }
-
-    // ── Preflop handler (fallback) ───────────────────────────────────
-
-    private fun decidePreflopTag(
-        ctx: DecisionContext,
-        tier: HandStrengthTier,
-        instinct: Int
-    ): ActionDecision {
-        // Preflop is normally handled by PreFlopStrategy.
-        // Fallback: TAG plays tight and aggressive preflop.
-        return when {
-            ctx.facingBet && tier == HandStrengthTier.MONSTER ->
-                raiseAction(ctx, ctx.profile.raiseMultiplier, 0.8, "3-betting with a monster")
-            ctx.facingBet && tier == HandStrengthTier.STRONG ->
-                if (instinct > 50) raiseAction(ctx, ctx.profile.raiseMultiplier, 0.6, "3-betting strong hand")
-                else callAction(ctx, 0.65, "calling with strong hand")
-            ctx.facingBet && tier == HandStrengthTier.MEDIUM ->
-                callAction(ctx, 0.55, "calling with medium hand")
-            ctx.facingBet ->
-                foldAction(0.7, "folding weak/nothing preflop")
-            !ctx.facingBet && tier <= HandStrengthTier.MEDIUM ->
-                raiseAction(ctx, 3.0, 0.7, "open raising")
-            else -> foldAction(0.7, "folding preflop")
-        }
     }
 
     // ── Flop handler ─────────────────────────────────────────────────

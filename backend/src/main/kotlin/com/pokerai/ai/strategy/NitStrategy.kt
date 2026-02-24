@@ -31,7 +31,7 @@ class NitStrategy : ArchetypeStrategy {
         val effectiveTier = adjustTierForOpponent(potAdjustedTier, ctx)
 
         return when (ctx.street) {
-            Street.PREFLOP -> decidePreflopNit(ctx, effectiveTier, effectiveInstinct)
+            Street.PREFLOP -> error("ArchetypeStrategy should not be called preflop — use PreFlopStrategy")
             Street.FLOP -> decideFlopNit(ctx, effectiveTier, effectiveInstinct)
             Street.TURN -> decideTurnNit(ctx, effectiveTier, effectiveInstinct)
             Street.RIVER -> decideRiverNit(ctx, effectiveTier, effectiveInstinct)
@@ -138,26 +138,6 @@ class NitStrategy : ArchetypeStrategy {
     }
 
     // ── Street handlers ─────────────────────────────────────────────
-
-    private fun decidePreflopNit(
-        ctx: DecisionContext,
-        tier: HandStrengthTier,
-        instinct: Int
-    ): ActionDecision {
-        // Preflop is normally handled by PreFlopStrategy before this is called.
-        // This is a fallback.
-        return when {
-            ctx.facingBet && tier >= HandStrengthTier.MEDIUM ->
-                foldAction(0.7, "preflop fold — not strong enough")
-            ctx.facingBet && tier == HandStrengthTier.STRONG ->
-                callAction(ctx, 0.6, "preflop call with strong hand")
-            ctx.facingBet && tier == HandStrengthTier.MONSTER ->
-                raiseAction(ctx, ctx.profile.raiseMultiplier, 0.8, "preflop raise with monster")
-            !ctx.facingBet && tier <= HandStrengthTier.STRONG ->
-                betAction(ctx, 2.5 * ctx.suggestedSizes.fullPot / ctx.potSize.coerceAtLeast(1), 0.7, "open raise")
-            else -> foldAction(0.8, "preflop default fold")
-        }
-    }
 
     private fun decideFlopNit(
         ctx: DecisionContext,

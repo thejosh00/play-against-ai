@@ -29,7 +29,7 @@ class CallingStationStrategy : ArchetypeStrategy {
         val effectiveTier = adjustTierForPotType(ctx)
 
         return when (ctx.street) {
-            Street.PREFLOP -> decidePreflopCallingStation(ctx, effectiveTier, effectiveInstinct)
+            Street.PREFLOP -> error("ArchetypeStrategy should not be called preflop — use PreFlopStrategy")
             Street.FLOP -> decideFlopCallingStation(ctx, effectiveTier, effectiveInstinct)
             Street.TURN -> decideTurnCallingStation(ctx, effectiveTier, effectiveInstinct)
             Street.RIVER -> decideRiverCallingStation(ctx, effectiveTier, effectiveInstinct)
@@ -93,30 +93,6 @@ class CallingStationStrategy : ArchetypeStrategy {
     }
 
     // ── Street handlers ─────────────────────────────────────────────
-
-    private fun decidePreflopCallingStation(
-        ctx: DecisionContext,
-        tier: HandStrengthTier,
-        instinct: Int
-    ): ActionDecision {
-        // Preflop is normally handled by PreFlopStrategy.
-        // Fallback: calling stations call almost everything and rarely raise.
-        return when {
-            ctx.facingBet && tier == HandStrengthTier.MONSTER ->
-                if (instinct > 75) raiseAction(ctx, ctx.profile.raiseMultiplier, 0.6, "raising big hand preflop")
-                else callAction(ctx, 0.8, "just calling with a big hand")
-            ctx.facingBet && tier <= HandStrengthTier.MEDIUM ->
-                callAction(ctx, 0.7, "calling to see a flop")
-            ctx.facingBet && tier == HandStrengthTier.WEAK ->
-                if (instinct > 40) callAction(ctx, 0.5, "calling with a weak hand — want to see cards")
-                else foldAction(0.5, "folding a weak hand preflop")
-            ctx.facingBet && tier == HandStrengthTier.NOTHING ->
-                foldAction(0.7, "even I can fold this preflop")
-            !ctx.facingBet && tier <= HandStrengthTier.STRONG ->
-                callAction(ctx, 0.6, "limping in")  // calling station limps rather than raises
-            else -> foldAction(0.6, "folding preflop")
-        }
-    }
 
     private fun decideFlopCallingStation(
         ctx: DecisionContext,
