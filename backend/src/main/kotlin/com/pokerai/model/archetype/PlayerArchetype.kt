@@ -2,6 +2,7 @@ package com.pokerai.model.archetype
 
 import com.pokerai.ai.GameContext
 import com.pokerai.ai.Scenario
+import com.pokerai.ai.strategy.ArchetypeStrategy
 import com.pokerai.model.Difficulty
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
@@ -18,6 +19,8 @@ sealed class PlayerArchetype {
     abstract fun getFacing3BetCutoff(): Int
     abstract fun getGameContextAdjustment(context: GameContext, scenario: Scenario): Int
     abstract fun buildSystemPrompt(profile: PlayerProfile): String
+
+    open fun getStrategy(): ArchetypeStrategy? = null
 
     companion object {
         val all: List<PlayerArchetype> = listOf(

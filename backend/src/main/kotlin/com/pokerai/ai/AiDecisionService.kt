@@ -4,13 +4,14 @@ import com.pokerai.model.*
 
 class AiDecisionService(
     private val preFlopStrategy: PreFlopStrategy = PreFlopStrategy(),
-    private val llmClient: LlmClient
+    private val llmClient: LlmClient,
+    private val hybridEngine: HybridDecisionEngine = HybridDecisionEngine(llmClient)
 ) {
     suspend fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): Action {
         val action = if (state.phase == GamePhase.PRE_FLOP) {
             preFlopStrategy.decide(player, state, config, tournamentState)
         } else {
-            llmClient.getDecision(player, state)
+            hybridEngine.decide(player, state)
         }
 
         return sanitizeAction(action, player, state)

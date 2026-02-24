@@ -1,5 +1,6 @@
 package com.pokerai.ai
 
+import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.*
 import kotlin.random.Random
 
@@ -68,6 +69,79 @@ object LlmPromptBuilder {
             - Action this street: $actionsThisStreet
             - Suggested bet sizes: 1/3 pot = ${state.pot / 3}, 1/2 pot = ${state.pot / 2}, 2/3 pot = ${state.pot * 2 / 3}, pot = ${state.pot}
             - Instinct: ${Random.nextInt(1, 101)}
+
+            What is your action?
+        """.trimIndent()
+    }
+
+    fun buildEnrichedUserPrompt(
+        player: Player,
+        state: GameState,
+        ctx: DecisionContext,
+        codedSuggestion: ActionDecision? = null
+    ): String {
+        val holeCards = player.holeCards?.let {
+            "${it.card1.notation} ${it.card2.notation}"
+        } ?: "unknown"
+
+        val community = if (state.communityCards.isEmpty()) "None"
+        else state.communityCards.joinToString(" ") { it.notation }
+
+        val drawDescription = if (ctx.hand.draws.isEmpty()) "No draws"
+        else ctx.hand.draws.joinToString(", ") { draw ->
+            "${draw.type.name.lowercase().replace('_', ' ')} (${draw.outs} outs${if (draw.isNut) ", to the nuts" else ""})"
+        }
+
+        val suggestedAction = codedSuggestion?.let { suggestion ->
+            val actionStr = when (suggestion.action.type) {
+                ActionType.FOLD -> "fold"
+                ActionType.CHECK -> "check"
+                ActionType.CALL -> "call"
+                ActionType.RAISE -> "raise to ${suggestion.action.amount}"
+                ActionType.ALL_IN -> "all-in"
+            }
+            "\n        - Instinct suggests: $actionStr (${suggestion.reasoning ?: "no specific reason"})"
+        } ?: ""
+
+        return """
+            Current game state:
+
+            YOUR HAND:
+            - Hole cards: $holeCards
+            - Hand strength: ${ctx.hand.tier.name} — ${ctx.hand.madeHandDescription}
+            - Draws: $drawDescription
+            - Total outs: ${ctx.hand.totalOuts}
+
+            BOARD:
+            - Community cards: $community
+            - Street: ${ctx.street.name}
+            - Board texture: ${ctx.board.description}
+
+            POT & SIZING:
+            - Pot size: ${ctx.potSize}
+            - Current bet to call: ${ctx.betToCall}
+            - Pot odds: ${String.format("%.1f%%", ctx.potOdds * 100)}
+            - Bet as fraction of pot: ${String.format("%.0f%%", ctx.betAsFractionOfPot * 100)}
+            - Stack-to-pot ratio: ${String.format("%.1f", ctx.spr)}
+            - Effective stack: ${ctx.effectiveStack}
+            - Suggested sizes: 1/3 pot = ${ctx.suggestedSizes.thirdPot}, 1/2 pot = ${ctx.suggestedSizes.halfPot}, 2/3 pot = ${ctx.suggestedSizes.twoThirdsPot}, pot = ${ctx.suggestedSizes.fullPot}
+            - Minimum raise to: ${ctx.suggestedSizes.minRaise}
+
+            YOUR SITUATION:
+            - Position: ${ctx.position.label}
+            - You have initiative: ${if (ctx.isInitiator) "Yes (you were the aggressor on the previous street)" else "No"}
+            - Facing a bet: ${ctx.facingBet}
+            - Facing a raise: ${ctx.facingRaise}
+            - Pot type: ${ctx.potType.name} (${ctx.actions.numPlayersInPot} players)
+            - Bets this street: ${ctx.numBetsThisStreet}
+
+            ACTION HISTORY:
+            - Preflop: ${ctx.actions.preflopNarrative}
+            - Flop: ${ctx.actions.flopNarrative}
+            - Turn: ${ctx.actions.turnNarrative}
+            - River: ${ctx.actions.riverNarrative}
+
+            INSTINCT: ${ctx.instinct}$suggestedAction
 
             What is your action?
         """.trimIndent()

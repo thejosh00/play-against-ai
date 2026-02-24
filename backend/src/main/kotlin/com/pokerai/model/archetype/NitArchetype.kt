@@ -3,6 +3,8 @@ package com.pokerai.model.archetype
 import com.pokerai.ai.GameContext
 import com.pokerai.ai.Scenario
 import com.pokerai.ai.TournamentStage
+import com.pokerai.ai.strategy.ArchetypeStrategy
+import com.pokerai.ai.strategy.NitStrategy
 import com.pokerai.model.Difficulty
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
@@ -62,6 +64,8 @@ data object NitArchetype : PlayerArchetype() {
     override fun getFacingRaiseCutoff(position: Position): Int = 7
 
     override fun getFacing3BetCutoff(): Int = 5
+
+    override fun getStrategy(): ArchetypeStrategy = NitStrategy()
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:
