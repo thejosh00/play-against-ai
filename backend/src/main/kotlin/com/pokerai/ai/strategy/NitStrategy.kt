@@ -27,7 +27,8 @@ class NitStrategy : ArchetypeStrategy {
 
     override fun decide(ctx: DecisionContext): ActionDecision {
         val effectiveInstinct = adjustInstinct(ctx)
-        val effectiveTier = adjustTierForPotType(ctx)
+        val potAdjustedTier = adjustTierForPotType(ctx)
+        val effectiveTier = adjustTierForOpponent(potAdjustedTier, ctx)
 
         return when (ctx.street) {
             Street.PREFLOP -> decidePreflopNit(ctx, effectiveTier, effectiveInstinct)
@@ -40,29 +41,29 @@ class NitStrategy : ArchetypeStrategy {
     // ── Instinct and tier adjustments ───────────────────────────────
 
     private fun adjustInstinct(ctx: DecisionContext): Int {
-        var instinct = ctx.instinct
+        var modifier = 0
 
         // SPR-based adjustment: low SPR makes nits MORE cautious (unless they have a monster)
         if (ctx.spr < 3.0 && ctx.hand.tier > HandStrengthTier.STRONG) {
-            instinct -= 10
+            modifier -= 10
         }
 
         // Multiway pots make nits more cautious
         if (ctx.potType == PotType.MULTIWAY) {
-            instinct -= 5
+            modifier -= 5
         }
 
         // Wet boards make nits more cautious
         if (ctx.board.wetness == BoardWetness.VERY_WET) {
-            instinct -= 5
+            modifier -= 5
         }
 
         // ── Session result adjustment ──────────────────────────
         ctx.sessionStats?.let { session ->
             when {
-                session.resultBB < -30.0 -> instinct -= 10
-                session.resultBB < -15.0 -> instinct -= 5
-                session.resultBB > 30.0 -> instinct += 5
+                session.resultBB < -30.0 -> modifier -= 10
+                session.resultBB < -15.0 -> modifier -= 5
+                session.resultBB > 30.0 -> modifier += 5
             }
         }
 
@@ -71,23 +72,12 @@ class NitStrategy : ArchetypeStrategy {
             val recent = showdowns.firstOrNull { it.handsAgo <= 5 }
             if (recent != null) {
                 when (recent.event) {
-                    ShowdownEvent.GOT_BLUFFED -> instinct += 12
-                    ShowdownEvent.CALLED_AND_LOST -> instinct -= 10
-                    ShowdownEvent.CALLED_AND_WON -> instinct += 5
-                    ShowdownEvent.SAW_OPPONENT_BLUFF -> instinct += 5
-                    ShowdownEvent.SAW_BIG_POT_LOSS -> instinct -= 5
+                    ShowdownEvent.GOT_BLUFFED -> modifier += 12
+                    ShowdownEvent.CALLED_AND_LOST -> modifier -= 10
+                    ShowdownEvent.CALLED_AND_WON -> modifier += 5
+                    ShowdownEvent.SAW_OPPONENT_BLUFF -> modifier += 5
+                    ShowdownEvent.SAW_BIG_POT_LOSS -> modifier -= 5
                 }
-            }
-        }
-
-        // ── Opponent type adjustment ───────────────────────────
-        ctx.bettorRead?.let { bettor ->
-            when (bettor.playerType) {
-                OpponentType.LOOSE_AGGRESSIVE -> instinct += 10
-                OpponentType.LOOSE_PASSIVE -> instinct += 5
-                OpponentType.TIGHT_AGGRESSIVE -> instinct -= 15
-                OpponentType.TIGHT_PASSIVE -> instinct -= 10
-                OpponentType.UNKNOWN -> {}
             }
         }
 
@@ -97,11 +87,40 @@ class NitStrategy : ArchetypeStrategy {
                 ?.filter { it.opponentIndex == ctx.bettorRead.playerIndex && it.handsAgo <= 10 }
                 ?.firstOrNull { it.event == ShowdownEvent.GOT_BLUFFED || it.event == ShowdownEvent.SAW_OPPONENT_BLUFF }
                 ?.let {
-                    instinct += 8
+                    modifier += 8
                 }
         }
 
-        return instinct.coerceIn(1, 100)
+        // Do not allow stacked modifiers to completely change personality
+        // A nit can easily clam up (-25), but even on full tilt, they won't go completely crazy (+15 max).
+        return (ctx.instinct + modifier.coerceIn(-25, 15)).coerceIn(1, 100)
+    }
+
+    private fun upgradeTier(tier: HandStrengthTier): HandStrengthTier = when (tier) {
+        HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
+        HandStrengthTier.STRONG -> HandStrengthTier.MONSTER
+        HandStrengthTier.MEDIUM -> HandStrengthTier.STRONG
+        HandStrengthTier.WEAK -> HandStrengthTier.MEDIUM
+        HandStrengthTier.NOTHING -> HandStrengthTier.NOTHING
+    }
+
+    private fun downgradeTier(tier: HandStrengthTier): HandStrengthTier = when (tier) {
+        HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
+        HandStrengthTier.STRONG -> HandStrengthTier.MEDIUM
+        HandStrengthTier.MEDIUM -> HandStrengthTier.WEAK
+        HandStrengthTier.WEAK -> HandStrengthTier.NOTHING
+        HandStrengthTier.NOTHING -> HandStrengthTier.NOTHING
+    }
+
+    private fun adjustTierForOpponent(tier: HandStrengthTier, ctx: DecisionContext): HandStrengthTier {
+        val bettor = ctx.bettorRead ?: return tier
+        return when (bettor.playerType) {
+            OpponentType.LOOSE_AGGRESSIVE -> upgradeTier(tier)
+            OpponentType.LOOSE_PASSIVE -> upgradeTier(tier)
+            OpponentType.TIGHT_AGGRESSIVE -> downgradeTier(tier)
+            OpponentType.TIGHT_PASSIVE -> downgradeTier(tier)
+            OpponentType.UNKNOWN -> tier
+        }
     }
 
     private fun adjustTierForPotType(ctx: DecisionContext): HandStrengthTier {

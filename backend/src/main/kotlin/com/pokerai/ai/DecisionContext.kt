@@ -30,16 +30,11 @@ data class BetSizes(
  * easy to test (just construct a DecisionContext and assert the output).
  */
 data class DecisionContext(
-    // ── Hand evaluation (from Phase 1) ──────────────────────
     val hand: HandAnalysis,
-
-    // ── Board texture (from Phase 2) ────────────────────────
     val board: BoardAnalysis,
-
-    // ── Action history (from Phase 3) ───────────────────────
     val actions: ActionAnalysis,
 
-    // ── Pot geometry ────────────────────────────────────────
+    // Pot geometry
     val potSize: Int,
     val betToCall: Int,
     val potOdds: Double,
@@ -48,7 +43,7 @@ data class DecisionContext(
     val effectiveStack: Int,
     val suggestedSizes: BetSizes,
 
-    // ── Situation ───────────────────────────────────────────
+    // Situation
     val street: Street,
     val position: Position,
     val isAggressor: Boolean,
@@ -58,16 +53,16 @@ data class DecisionContext(
     val numBetsThisStreet: Int,
     val potType: PotType,
 
-    // ── Randomizer ──────────────────────────────────────────
+    // Randomizer
     val instinct: Int,
 
-    // ── Profile (archetype tuning knobs) ────────────────────
+    // Profile (archetype tuning knobs)
     val profile: PlayerProfile,
 
-    // ── Session context (Phase 7) ───────────────────────────
+    // Session context
     val sessionStats: SessionStats? = null,
     val opponents: List<OpponentRead> = emptyList(),
 
-    // ── Opponent making the bet we're facing ────────────────
+    // Opponent making the bet we're facing
     val bettorRead: OpponentRead? = null
 )

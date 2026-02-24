@@ -193,7 +193,7 @@ class GameSession(
 
         val results = GameEngine.evaluateShowdown(s)
 
-        // Phase 7: Record showdown for session tracking
+        // Record showdown for session tracking
         val shownHands = s.players
             .filter { !it.isFolded && !it.isSittingOut && it.holeCards != null }
             .associate { it.index to it.holeCards!! }

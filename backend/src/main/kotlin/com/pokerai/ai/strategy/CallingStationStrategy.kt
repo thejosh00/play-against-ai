@@ -57,7 +57,7 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // Recent showdown: calling stations are heavily affected by recent results
         ctx.sessionStats?.recentShowdowns?.let { showdowns ->
-            val recent = showdowns.firstOrNull { it.handsAgo <= 5 }
+            val recent = showdowns.firstOrNull { it.handsAgo <= 20 }
             if (recent != null) {
                 when (recent.event) {
                     ShowdownEvent.CALLED_AND_WON -> instinct += 15  // "See! I knew they were bluffing!" → calls even wider

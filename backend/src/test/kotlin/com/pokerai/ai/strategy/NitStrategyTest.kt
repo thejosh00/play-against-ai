@@ -1194,46 +1194,33 @@ class NitStrategyTest {
         assertEquals(ActionType.FOLD, decision.action.type)
     }
 
-    // ── Phase 7: Opponent type adjustment ──────────────────────────
+    // ── Phase 7: Opponent type tier adjustment ─────────────────────
 
     @Test
-    fun `nit adjusts against LAG — more willing to call`() {
+    fun `nit upgrades tier against LAG — STRONG becomes MONSTER`() {
         val lagRead = opponentRead(playerType = OpponentType.LOOSE_AGGRESSIVE)
 
-        // River STRONG facing big bet (>callCeiling), dry board
-        // betToCall=90 / pot=100 = 0.9 > 0.85 ceiling → big-bet branch
-        // Without LAG: instinct 68 < 75 → fold
-        // With LAG (+10): instinct 78 > 75 → painful call
+        // River STRONG facing big bet (90% pot) → normally folds
+        // With LAG: STRONG upgrades to MONSTER → easy call
         val withLag = strategy.decide(ctx(
             tier = HandStrengthTier.STRONG,
             street = Street.RIVER,
             facingBet = true,
             betToCall = 90,
             potSize = 100,
-            instinct = 68,
+            instinct = 50,
             bettorRead = lagRead
         ))
-        assertEquals(ActionType.CALL, withLag.action.type, "Should call against LAG with boosted instinct")
-
-        val withoutLag = strategy.decide(ctx(
-            tier = HandStrengthTier.STRONG,
-            street = Street.RIVER,
-            facingBet = true,
-            betToCall = 90,
-            potSize = 100,
-            instinct = 68,
-            bettorRead = null
-        ))
-        assertEquals(ActionType.FOLD, withoutLag.action.type, "Should fold without LAG read")
+        assertEquals(ActionType.CALL, withLag.action.type, "STRONG → MONSTER against LAG should call big river bet")
+        assertTrue(withLag.confidence >= 0.9, "Should have monster-level confidence")
     }
 
     @Test
-    fun `nit adjusts against TAG — more likely to fold`() {
+    fun `nit downgrades tier against TAG — MEDIUM becomes WEAK`() {
         val tagRead = opponentRead(playerType = OpponentType.TIGHT_AGGRESSIVE)
 
-        // Turn, MEDIUM facing small bet on dry board: calls if instinct > 60
-        // Without TAG: instinct 70 > 60 → calls
-        // With TAG (-15): instinct 55 < 60 → folds
+        // Turn MEDIUM facing small bet on dry board: normally calls
+        // With TAG: MEDIUM downgrades to WEAK → folds (no draw)
         val withTag = strategy.decide(ctx(
             tier = HandStrengthTier.MEDIUM,
             street = Street.TURN,
@@ -1241,22 +1228,130 @@ class NitStrategyTest {
             betToCall = 33,
             potSize = 100,
             wetness = BoardWetness.DRY,
-            instinct = 70,
+            instinct = 50,
             bettorRead = tagRead
         ))
-        assertEquals(ActionType.FOLD, withTag.action.type, "Should fold against TAG")
+        assertEquals(ActionType.FOLD, withTag.action.type, "MEDIUM → WEAK against TAG should fold")
+    }
 
-        val withoutTag = strategy.decide(ctx(
-            tier = HandStrengthTier.MEDIUM,
-            street = Street.TURN,
+    @Test
+    fun `MONSTER does not downgrade against TAG`() {
+        val tagRead = opponentRead(playerType = OpponentType.TIGHT_AGGRESSIVE)
+
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MONSTER,
+            street = Street.RIVER,
             facingBet = true,
-            betToCall = 33,
+            betToCall = 90,
             potSize = 100,
-            wetness = BoardWetness.DRY,
-            instinct = 70,
+            instinct = 50,
+            bettorRead = tagRead
+        ))
+        assertNotEquals(ActionType.FOLD, decision.action.type, "MONSTER should never downgrade")
+    }
+
+    @Test
+    fun `NOTHING does not upgrade against LAG`() {
+        val lagRead = opponentRead(playerType = OpponentType.LOOSE_AGGRESSIVE)
+
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.NOTHING,
+            street = Street.FLOP,
+            facingBet = true,
+            betToCall = 50,
+            potSize = 100,
+            instinct = 50,
+            bettorRead = lagRead
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type, "NOTHING should stay NOTHING against LAG")
+    }
+
+    @Test
+    fun `WEAK upgrades to MEDIUM against loose passive`() {
+        val lpRead = opponentRead(playerType = OpponentType.LOOSE_PASSIVE)
+
+        // Flop WEAK facing small bet → normally folds (no draw)
+        // With LP: WEAK upgrades to MEDIUM → calls small bet (< 0.5)
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.WEAK,
+            street = Street.FLOP,
+            facingBet = true,
+            betToCall = 40,
+            potSize = 100,
+            instinct = 50,
+            bettorRead = lpRead
+        ))
+        assertEquals(ActionType.CALL, decision.action.type, "WEAK → MEDIUM against LP should call small bet")
+    }
+
+    @Test
+    fun `UNKNOWN bettor does not change tier`() {
+        val unknownRead = opponentRead(playerType = OpponentType.UNKNOWN)
+
+        // Flop MEDIUM facing large bet → folds
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.FLOP,
+            facingBet = true,
+            betToCall = 75,
+            potSize = 100,
+            instinct = 50,
+            bettorRead = unknownRead
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type, "UNKNOWN should not change tier")
+    }
+
+    @Test
+    fun `no bettor read does not change tier`() {
+        // Flop MEDIUM facing large bet → folds (same as UNKNOWN)
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.FLOP,
+            facingBet = true,
+            betToCall = 75,
+            potSize = 100,
+            instinct = 50,
             bettorRead = null
         ))
-        assertEquals(ActionType.CALL, withoutTag.action.type, "Should call without TAG read")
+        assertEquals(ActionType.FOLD, decision.action.type, "No bettor read should not change tier")
+    }
+
+    @Test
+    fun `multiway plus LAG cancels out — STRONG stays STRONG`() {
+        val lagRead = opponentRead(playerType = OpponentType.LOOSE_AGGRESSIVE)
+
+        // STRONG in multiway → downgrades to MEDIUM → LAG upgrades back to STRONG
+        // Flop STRONG facing bet within ceiling → calls
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            potType = PotType.MULTIWAY,
+            street = Street.FLOP,
+            facingBet = true,
+            betToCall = 50,
+            potSize = 100,
+            instinct = 50,
+            bettorRead = lagRead
+        ))
+        assertEquals(ActionType.CALL, decision.action.type, "Multiway downgrade + LAG upgrade should cancel out")
+    }
+
+    @Test
+    fun `multiway plus TAG double downgrades — STRONG becomes WEAK`() {
+        val tagRead = opponentRead(playerType = OpponentType.TIGHT_AGGRESSIVE)
+
+        // STRONG in multiway → MEDIUM → TAG downgrades to WEAK
+        // Flop WEAK facing bet with no draw → folds
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            potType = PotType.MULTIWAY,
+            street = Street.FLOP,
+            facingBet = true,
+            betToCall = 50,
+            potSize = 100,
+            instinct = 50,
+            bettorRead = tagRead
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type, "Multiway + TAG should double downgrade STRONG to WEAK")
     }
 
     // ── Phase 7: Specific bettor bluff adjustment ──────────────────
@@ -1265,7 +1360,7 @@ class NitStrategyTest {
     fun `nit adjusts against specific recent bluffer`() {
         val blufferRead = opponentRead(playerIndex = 3, playerType = OpponentType.UNKNOWN)
         val bluffMemory = ShowdownMemory(
-            handsAgo = 5,
+            handsAgo = 8, // > 5 so general showdown check doesn't fire, <= 10 for specific bettor check
             opponentIndex = 3,
             opponentName = "Opponent3",
             event = ShowdownEvent.GOT_BLUFFED,
@@ -1274,18 +1369,32 @@ class NitStrategyTest {
         val stats = SessionStats(resultBB = 0.0, handsPlayed = 20, recentShowdowns = listOf(bluffMemory))
 
         // River STRONG facing big bet (>ceiling), dry board
-        // instinct 58 + 12 (GOT_BLUFFED) + 8 (specific bluffer) = 78 > 75 → painful call
+        // modifier = +8 (specific bluffer only, handsAgo=8 skips general showdown check)
+        // instinct 68 + 8 = 76 > 75 → painful call
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.STRONG,
             street = Street.RIVER,
             facingBet = true,
             betToCall = 90,
             potSize = 100,
-            instinct = 58,
+            instinct = 68,
             sessionStats = stats,
             bettorRead = blufferRead
         ))
         assertEquals(ActionType.CALL, decision.action.type, "Should call against a known bluffer")
+
+        // Without bettor read: instinct stays 68 < 75 → fold
+        val withoutBluffer = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            street = Street.RIVER,
+            facingBet = true,
+            betToCall = 90,
+            potSize = 100,
+            instinct = 68,
+            sessionStats = stats,
+            bettorRead = null
+        ))
+        assertEquals(ActionType.FOLD, withoutBluffer.action.type, "Should fold without bluffer read")
     }
 
     // ── Phase 7: No session data → unchanged behavior ──────────────
@@ -1323,28 +1432,29 @@ class NitStrategyTest {
     // ── Phase 7: Combined adjustments ──────────────────────────────
 
     @Test
-    fun `losing session plus TAG bettor makes nit very tight`() {
+    fun `losing session plus TAG bettor — tier downgrade plus tighter instinct`() {
         val losingStats = SessionStats(resultBB = -35.0, handsPlayed = 40, recentShowdowns = emptyList())
         val tagRead = opponentRead(playerType = OpponentType.TIGHT_AGGRESSIVE)
 
-        // Turn, MEDIUM facing small bet on dry board: calls if instinct > 60
-        // instinct = 85 - 10 (losing badly) - 15 (TAG) = 60 → NOT > 60 → folds
+        // MEDIUM + TAG → WEAK (tier downgrade)
+        // Losing session also reduces instinct
+        // Turn WEAK facing bet with no draw → folds
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.MEDIUM,
             street = Street.TURN,
             facingBet = true,
             betToCall = 33,
             potSize = 100,
-            instinct = 85,
+            instinct = 50,
             sessionStats = losingStats,
             bettorRead = tagRead
         ))
         assertEquals(ActionType.FOLD, decision.action.type,
-            "Should fold even medium hand when losing badly against TAG")
+            "MEDIUM → WEAK against TAG plus losing session should fold")
     }
 
     @Test
-    fun `winning session plus LAG bettor plus bluff memory makes nit loose`() {
+    fun `winning session plus LAG bettor plus bluff memory — tier upgrade plus looser instinct`() {
         val bluffMemory = ShowdownMemory(
             handsAgo = 3,
             opponentIndex = 1,
@@ -1355,19 +1465,20 @@ class NitStrategyTest {
         val winningStats = SessionStats(resultBB = 35.0, handsPlayed = 40, recentShowdowns = listOf(bluffMemory))
         val lagRead = opponentRead(playerIndex = 1, playerType = OpponentType.LOOSE_AGGRESSIVE)
 
-        // River STRONG facing big bet (>ceiling), dry board
-        // instinct = 41 + 5 (winning) + 12 (GOT_BLUFFED) + 10 (LAG) + 8 (specific bluffer) = 76 > 75
+        // STRONG + LAG → MONSTER (tier upgrade)
+        // River MONSTER facing big bet → easy call
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.STRONG,
             street = Street.RIVER,
             facingBet = true,
             betToCall = 90,
             potSize = 100,
-            instinct = 41,
+            instinct = 50,
             sessionStats = winningStats,
             bettorRead = lagRead
         ))
         assertEquals(ActionType.CALL, decision.action.type,
-            "Should call with all the loosening adjustments combined")
+            "STRONG → MONSTER against LAG should call big river bet")
+        assertTrue(decision.confidence >= 0.9, "Should have monster-level confidence")
     }
 }
