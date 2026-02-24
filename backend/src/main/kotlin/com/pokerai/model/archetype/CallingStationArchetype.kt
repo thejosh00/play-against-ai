@@ -3,6 +3,8 @@ package com.pokerai.model.archetype
 import com.pokerai.ai.GameContext
 import com.pokerai.ai.Scenario
 import com.pokerai.ai.TournamentStage
+import com.pokerai.ai.strategy.ArchetypeStrategy
+import com.pokerai.ai.strategy.CallingStationStrategy
 import com.pokerai.model.Difficulty
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
@@ -30,6 +32,8 @@ data object CallingStationArchetype : PlayerArchetype() {
         betSizePotFraction = randomBetween(0.40, 0.55),
         raiseMultiplier = randomBetween(2.0, 2.5)
     )
+
+    override fun getStrategy(): ArchetypeStrategy = CallingStationStrategy()
 
     override fun getGameContextAdjustment(context: GameContext, scenario: Scenario): Int {
         var adj = 0
