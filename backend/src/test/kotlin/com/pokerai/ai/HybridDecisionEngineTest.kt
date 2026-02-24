@@ -2,6 +2,7 @@ package com.pokerai.ai
 
 import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.ai.strategy.NitStrategy
+import com.pokerai.ai.strategy.TagStrategy
 import com.pokerai.analysis.*
 import com.pokerai.model.*
 import com.pokerai.model.archetype.NitArchetype
@@ -217,7 +218,7 @@ class HybridDecisionEngineTest {
     // ── No coded strategy → LLM called directly ─────────────
 
     @Test
-    fun `TAG archetype has no coded strategy so LLM is called directly`() = runBlocking {
+    fun `TAG archetype has coded strategy so LLM is not called directly`() = runBlocking {
         val fakeLlm = FakeLlmClient(Action.call(50))
         val engine = HybridDecisionEngine(fakeLlm)
 
@@ -242,9 +243,7 @@ class HybridDecisionEngineTest {
 
         val result = engine.decide(aiPlayer, state)
 
-        assertTrue(fakeLlm.getDecisionCalled, "LLM getDecision should be called for TAG archetype")
-        assertFalse(fakeLlm.getEnrichedDecisionCalled, "Enriched decision should not be called — no coded strategy")
-        assertEquals(ActionType.CALL, result.type)
+        assertFalse(fakeLlm.getDecisionCalled, "LLM getDecision should not be called — TAG has coded strategy")
     }
 
     // ── No profile → LLM called directly ────────────────────
@@ -451,7 +450,7 @@ class HybridDecisionEngineTest {
     }
 
     @Test
-    fun `postflop uses LLM for TAG player`() = runBlocking {
+    fun `postflop uses coded strategy for TAG player`() = runBlocking {
         val fakeLlm = FakeLlmClient(Action.call(50))
         val service = AiDecisionService(llmClient = fakeLlm)
 
@@ -479,7 +478,7 @@ class HybridDecisionEngineTest {
 
         val result = service.decide(aiPlayer, state)
 
-        assertTrue(fakeLlm.getDecisionCalled, "LLM should be called for TAG archetype")
+        assertFalse(fakeLlm.getDecisionCalled, "LLM should not be called — TAG has coded strategy")
     }
 
     // ── sanitizeAction still works with coded actions ────────
@@ -560,9 +559,10 @@ class HybridDecisionEngineTest {
     }
 
     @Test
-    fun `TagArchetype getStrategy returns null`() {
+    fun `TagArchetype getStrategy returns TagStrategy`() {
         val strategy = TagArchetype.getStrategy()
-        assertNull(strategy)
+        assertNotNull(strategy)
+        assertTrue(strategy is TagStrategy)
     }
 
     // ── LlmPromptBuilder enriched prompt ─────────────────────

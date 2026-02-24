@@ -3,6 +3,8 @@ package com.pokerai.model.archetype
 import com.pokerai.ai.GameContext
 import com.pokerai.ai.Scenario
 import com.pokerai.ai.TournamentStage
+import com.pokerai.ai.strategy.ArchetypeStrategy
+import com.pokerai.ai.strategy.TagStrategy
 import com.pokerai.model.PlayerProfile
 import com.pokerai.model.Position
 
@@ -57,6 +59,8 @@ data object TagArchetype : PlayerArchetype() {
     override fun getFacingRaiseCutoff(position: Position): Int = 12
 
     override fun getFacing3BetCutoff(): Int = 8
+
+    override fun getStrategy(): ArchetypeStrategy = TagStrategy()
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:
