@@ -1,5 +1,6 @@
 package com.pokerai.ai
 
+import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.Action
 import com.pokerai.model.GameState
 import com.pokerai.model.Player
@@ -53,6 +54,34 @@ class OpenRouterLlmClient(
         }
         engine {
             requestTimeout = 120_000
+        }
+    }
+
+    override suspend fun getEnrichedDecision(
+        player: Player,
+        state: GameState,
+        ctx: DecisionContext,
+        codedSuggestion: ActionDecision
+    ): Action {
+        val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
+        val userPrompt = LlmPromptBuilder.buildEnrichedUserPrompt(player, state, ctx, codedSuggestion)
+
+        val request = OpenRouterChatRequest(
+            model = model,
+            messages = listOf(
+                OpenRouterMessage("system", systemPrompt),
+                OpenRouterMessage("user", userPrompt)
+            ),
+            stream = false
+        )
+
+        return try {
+            val content = chatCompletion(request)
+            logger.debug("LLM enriched response for ${player.name}: $content")
+            LlmResponseParser.parse(content, player, state)
+        } catch (e: Exception) {
+            logger.warn("Enriched LLM call failed for ${player.name}: ${e.message}, falling back to coded suggestion")
+            codedSuggestion.action
         }
     }
 

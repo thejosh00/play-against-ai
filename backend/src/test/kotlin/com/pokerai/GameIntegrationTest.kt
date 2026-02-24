@@ -1,8 +1,10 @@
 package com.pokerai
 
 import com.pokerai.ai.AiDecisionService
+import com.pokerai.ai.DecisionContext
 import com.pokerai.ai.LlmClient
 import com.pokerai.ai.PreFlopStrategy
+import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.dto.ClientMessage
 import com.pokerai.dto.ServerMessage
 import com.pokerai.model.*
@@ -37,6 +39,13 @@ class GameIntegrationTest {
                 Action.check()
             }
         }
+
+        override suspend fun getEnrichedDecision(
+            player: Player,
+            state: GameState,
+            ctx: DecisionContext,
+            codedSuggestion: ActionDecision
+        ): Action = getDecision(player, state)
 
         override suspend fun isAvailable(): Boolean = true
     }

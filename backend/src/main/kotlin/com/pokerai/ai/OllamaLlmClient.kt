@@ -1,5 +1,6 @@
 package com.pokerai.ai
 
+import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.Action
 import com.pokerai.model.GameState
 import com.pokerai.model.Player
@@ -48,6 +49,45 @@ class OllamaLlmClient(
         }
         engine {
             requestTimeout = 120_000
+        }
+    }
+
+    override suspend fun getEnrichedDecision(
+        player: Player,
+        state: GameState,
+        ctx: DecisionContext,
+        codedSuggestion: ActionDecision
+    ): Action {
+        val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
+        val userPrompt = LlmPromptBuilder.buildEnrichedUserPrompt(player, state, ctx, codedSuggestion)
+
+        val request = OllamaChatRequest(
+            model = model,
+            messages = listOf(
+                OllamaMessage("system", systemPrompt),
+                OllamaMessage("user", userPrompt)
+            ),
+            stream = false
+        )
+
+        return try {
+            val response = httpClient.post("$baseUrl/api/chat") {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+
+            val responseText = response.bodyAsText()
+            val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
+
+            val content = ollamaResponse.message?.content
+                ?: throw Exception("Empty response from Ollama")
+
+            logger.debug("LLM enriched response for ${player.name}: $content")
+
+            LlmResponseParser.parse(content, player, state)
+        } catch (e: Exception) {
+            logger.warn("Enriched LLM call failed for ${player.name}: ${e.message}, falling back to coded suggestion")
+            codedSuggestion.action
         }
     }
 

@@ -14,7 +14,5 @@ interface LlmClient {
         state: GameState,
         ctx: DecisionContext,
         codedSuggestion: ActionDecision
-    ): Action {
-        return getDecision(player, state)
-    }
+    ): Action
 }
