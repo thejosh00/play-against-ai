@@ -1,7 +1,6 @@
 package com.pokerai.session
 
-import com.pokerai.ai.AiDecisionService
-import com.pokerai.ai.OllamaLlmClient
+import com.pokerai.ai.*
 import com.pokerai.dto.*
 import com.pokerai.engine.GameEngine
 import com.pokerai.engine.PotManager
@@ -16,7 +15,13 @@ import kotlin.random.Random
 
 class GameSession(
     private val wsSession: DefaultWebSocketServerSession,
-    private val aiService: AiDecisionService = AiDecisionService(llmClient = OllamaLlmClient()),
+    private val sessionTracker: SessionTracker = SessionTracker(bigBlind = 10),
+    private val opponentModeler: OpponentModeler = OpponentModeler(),
+    private val aiService: AiDecisionService = AiDecisionService(
+        llmClient = OllamaLlmClient(),
+        sessionTracker = sessionTracker,
+        opponentModeler = opponentModeler
+    ),
     private val aiThinkingDelayMs: LongRange = 1000L..2000L
 ) {
     private var state: GameState? = null
@@ -72,6 +77,11 @@ class GameSession(
 
         GameEngine.advanceDealer(s)
         GameEngine.startNewHand(s)
+
+        // Phase 7: Record hand start for session tracking
+        sessionTracker.recordHandStart(s.players)
+        opponentModeler.recordNewHand(s.players)
+
         sendState()
 
         // Run pre-flop betting
@@ -137,6 +147,7 @@ class GameSession(
                 sendState()
                 val playerAction = playerActionChannel.receive()
                 val action = playerActionToAction(playerAction, player, s)
+                opponentModeler.recordAction(nextToAct, action, s.phase)
                 GameEngine.applyAction(s, nextToAct, action)
                 sendActionPerformed(player, action)
             } else {
@@ -144,6 +155,7 @@ class GameSession(
                 // AI thinking delay
                 delay(aiThinkingDelayMs.random())
                 val action = aiService.decide(player, s, config, tournamentState)
+                opponentModeler.recordAction(nextToAct, action, s.phase)
                 GameEngine.applyAction(s, nextToAct, action)
                 sendActionPerformed(player, action)
             }
@@ -180,6 +192,12 @@ class GameSession(
         }
 
         val results = GameEngine.evaluateShowdown(s)
+
+        // Phase 7: Record showdown for session tracking
+        val shownHands = s.players
+            .filter { !it.isFolded && !it.isSittingOut && it.holeCards != null }
+            .associate { it.index to it.holeCards!! }
+        sessionTracker.recordShowdown(s, results, shownHands)
 
         val winners = results.map { (idx, amount, desc) ->
             WinnerDto(idx, s.players[idx].name, amount, desc)

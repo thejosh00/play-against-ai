@@ -1,8 +1,6 @@
 package com.pokerai.ai.strategy
 
-import com.pokerai.ai.BetSizes
-import com.pokerai.ai.DecisionContext
-import com.pokerai.ai.Street
+import com.pokerai.ai.*
 import com.pokerai.analysis.*
 import com.pokerai.model.*
 import com.pokerai.model.archetype.NitArchetype
@@ -81,7 +79,10 @@ class NitStrategyTest {
         postFlopCallCeiling: Double = 0.85,
         postFlopCheckProb: Double = 0.70,
         betSizePotFraction: Double = 0.50,
-        raiseMultiplier: Double = 2.2
+        raiseMultiplier: Double = 2.2,
+        sessionStats: SessionStats? = null,
+        opponents: List<OpponentRead> = emptyList(),
+        bettorRead: OpponentRead? = null
     ): DecisionContext {
         val hand = HandAnalysis(
             tier = tier,
@@ -149,9 +150,28 @@ class NitStrategyTest {
             numBetsThisStreet = numBetsThisStreet,
             potType = potType,
             instinct = instinct,
-            profile = profile
+            profile = profile,
+            sessionStats = sessionStats,
+            opponents = opponents,
+            bettorRead = bettorRead
         )
     }
+
+    private fun opponentRead(
+        playerIndex: Int = 1,
+        playerType: OpponentType = OpponentType.UNKNOWN
+    ) = OpponentRead(
+        playerIndex = playerIndex,
+        playerName = "Opponent$playerIndex",
+        position = Position.BTN,
+        stack = 1000,
+        playerType = playerType,
+        vpip = 0.0,
+        pfr = 0.0,
+        aggressionFrequency = 0.0,
+        handsObserved = 20,
+        recentNotableAction = null
+    )
 
     // ── Flop — facing a bet ─────────────────────────────────────────
 
@@ -1075,5 +1095,279 @@ class NitStrategyTest {
         ))
         assertEquals(ActionType.CALL, decision.action.type)
         assertEquals(73, decision.action.amount)
+    }
+
+    // ── Phase 7: Session result adjustment ─────────────────────────
+
+    @Test
+    fun `nit tightens up when losing badly`() {
+        // Turn, MEDIUM facing small bet on dry board: calls if instinct > 60
+        // instinct = 65, losing badly (-10) → effective 55 < 60 → folds
+        val losingStats = SessionStats(resultBB = -40.0, handsPlayed = 50, recentShowdowns = emptyList())
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.TURN,
+            facingBet = true,
+            betToCall = 33,
+            potSize = 100,
+            instinct = 65,
+            sessionStats = losingStats
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type)
+
+        // Same scenario without session stats → should call
+        val noSession = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.TURN,
+            facingBet = true,
+            betToCall = 33,
+            potSize = 100,
+            instinct = 65,
+            sessionStats = null
+        ))
+        assertEquals(ActionType.CALL, noSession.action.type)
+    }
+
+    @Test
+    fun `nit loosens slightly when winning big`() {
+        val winningStats = SessionStats(resultBB = 40.0, handsPlayed = 50, recentShowdowns = emptyList())
+
+        // Turn, MEDIUM, checked to, initiator, instinct = 78
+        // Without boost: 78 < 80 → checks
+        // With boost (+5): 83 > 80 → barrels
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.TURN,
+            isInitiator = true,
+            facingBet = false,
+            instinct = 78,
+            sessionStats = winningStats
+        ))
+        assertEquals(ActionType.RAISE, decision.action.type)
+    }
+
+    // ── Phase 7: Recent showdown adjustment ────────────────────────
+
+    @Test
+    fun `nit more willing to call after being bluffed`() {
+        val bluffMemory = ShowdownMemory(
+            handsAgo = 2,
+            opponentIndex = 1,
+            opponentName = "Bluffer",
+            event = ShowdownEvent.GOT_BLUFFED,
+            details = "showed 7-2"
+        )
+        val stats = SessionStats(resultBB = 0.0, handsPlayed = 20, recentShowdowns = listOf(bluffMemory))
+
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            facingBet = true,
+            betToCall = 45,
+            potSize = 100,
+            instinct = 50,
+            sessionStats = stats
+        ))
+        // MEDIUM facing 45% pot → calls (< 0.5 threshold), bluff memory doesn't hurt
+        assertEquals(ActionType.CALL, decision.action.type)
+    }
+
+    @Test
+    fun `nit tightens after calling and losing`() {
+        val lossMemory = ShowdownMemory(
+            handsAgo = 1,
+            opponentIndex = 1,
+            opponentName = "Winner",
+            event = ShowdownEvent.CALLED_AND_LOST,
+            details = "Full House"
+        )
+        val stats = SessionStats(resultBB = -5.0, handsPlayed = 20, recentShowdowns = listOf(lossMemory))
+
+        // MEDIUM facing 55% pot bet → folds (> 0.5 threshold)
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            facingBet = true,
+            betToCall = 55,
+            potSize = 100,
+            instinct = 60,
+            sessionStats = stats
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type)
+    }
+
+    // ── Phase 7: Opponent type adjustment ──────────────────────────
+
+    @Test
+    fun `nit adjusts against LAG — more willing to call`() {
+        val lagRead = opponentRead(playerType = OpponentType.LOOSE_AGGRESSIVE)
+
+        // River STRONG facing big bet (>callCeiling), dry board
+        // betToCall=90 / pot=100 = 0.9 > 0.85 ceiling → big-bet branch
+        // Without LAG: instinct 68 < 75 → fold
+        // With LAG (+10): instinct 78 > 75 → painful call
+        val withLag = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            street = Street.RIVER,
+            facingBet = true,
+            betToCall = 90,
+            potSize = 100,
+            instinct = 68,
+            bettorRead = lagRead
+        ))
+        assertEquals(ActionType.CALL, withLag.action.type, "Should call against LAG with boosted instinct")
+
+        val withoutLag = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            street = Street.RIVER,
+            facingBet = true,
+            betToCall = 90,
+            potSize = 100,
+            instinct = 68,
+            bettorRead = null
+        ))
+        assertEquals(ActionType.FOLD, withoutLag.action.type, "Should fold without LAG read")
+    }
+
+    @Test
+    fun `nit adjusts against TAG — more likely to fold`() {
+        val tagRead = opponentRead(playerType = OpponentType.TIGHT_AGGRESSIVE)
+
+        // Turn, MEDIUM facing small bet on dry board: calls if instinct > 60
+        // Without TAG: instinct 70 > 60 → calls
+        // With TAG (-15): instinct 55 < 60 → folds
+        val withTag = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.TURN,
+            facingBet = true,
+            betToCall = 33,
+            potSize = 100,
+            wetness = BoardWetness.DRY,
+            instinct = 70,
+            bettorRead = tagRead
+        ))
+        assertEquals(ActionType.FOLD, withTag.action.type, "Should fold against TAG")
+
+        val withoutTag = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.TURN,
+            facingBet = true,
+            betToCall = 33,
+            potSize = 100,
+            wetness = BoardWetness.DRY,
+            instinct = 70,
+            bettorRead = null
+        ))
+        assertEquals(ActionType.CALL, withoutTag.action.type, "Should call without TAG read")
+    }
+
+    // ── Phase 7: Specific bettor bluff adjustment ──────────────────
+
+    @Test
+    fun `nit adjusts against specific recent bluffer`() {
+        val blufferRead = opponentRead(playerIndex = 3, playerType = OpponentType.UNKNOWN)
+        val bluffMemory = ShowdownMemory(
+            handsAgo = 5,
+            opponentIndex = 3,
+            opponentName = "Opponent3",
+            event = ShowdownEvent.GOT_BLUFFED,
+            details = "showed air"
+        )
+        val stats = SessionStats(resultBB = 0.0, handsPlayed = 20, recentShowdowns = listOf(bluffMemory))
+
+        // River STRONG facing big bet (>ceiling), dry board
+        // instinct 58 + 12 (GOT_BLUFFED) + 8 (specific bluffer) = 78 > 75 → painful call
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            street = Street.RIVER,
+            facingBet = true,
+            betToCall = 90,
+            potSize = 100,
+            instinct = 58,
+            sessionStats = stats,
+            bettorRead = blufferRead
+        ))
+        assertEquals(ActionType.CALL, decision.action.type, "Should call against a known bluffer")
+    }
+
+    // ── Phase 7: No session data → unchanged behavior ──────────────
+
+    @Test
+    fun `no session data — strategy works unchanged`() {
+        val noSessionCtx = ctx(
+            tier = HandStrengthTier.STRONG,
+            facingBet = true,
+            betToCall = 50,
+            potSize = 100,
+            instinct = 50,
+            sessionStats = null,
+            bettorRead = null
+        )
+        val decision = strategy.decide(noSessionCtx)
+        assertEquals(ActionType.CALL, decision.action.type,
+            "STRONG facing 50% pot bet should call regardless of session data")
+    }
+
+    @Test
+    fun `no session data — NOTHING still folds`() {
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.NOTHING,
+            facingBet = true,
+            betToCall = 50,
+            potSize = 100,
+            instinct = 50,
+            sessionStats = null,
+            bettorRead = null
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type)
+    }
+
+    // ── Phase 7: Combined adjustments ──────────────────────────────
+
+    @Test
+    fun `losing session plus TAG bettor makes nit very tight`() {
+        val losingStats = SessionStats(resultBB = -35.0, handsPlayed = 40, recentShowdowns = emptyList())
+        val tagRead = opponentRead(playerType = OpponentType.TIGHT_AGGRESSIVE)
+
+        // Turn, MEDIUM facing small bet on dry board: calls if instinct > 60
+        // instinct = 85 - 10 (losing badly) - 15 (TAG) = 60 → NOT > 60 → folds
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.MEDIUM,
+            street = Street.TURN,
+            facingBet = true,
+            betToCall = 33,
+            potSize = 100,
+            instinct = 85,
+            sessionStats = losingStats,
+            bettorRead = tagRead
+        ))
+        assertEquals(ActionType.FOLD, decision.action.type,
+            "Should fold even medium hand when losing badly against TAG")
+    }
+
+    @Test
+    fun `winning session plus LAG bettor plus bluff memory makes nit loose`() {
+        val bluffMemory = ShowdownMemory(
+            handsAgo = 3,
+            opponentIndex = 1,
+            opponentName = "LAGgy",
+            event = ShowdownEvent.GOT_BLUFFED,
+            details = "showed garbage"
+        )
+        val winningStats = SessionStats(resultBB = 35.0, handsPlayed = 40, recentShowdowns = listOf(bluffMemory))
+        val lagRead = opponentRead(playerIndex = 1, playerType = OpponentType.LOOSE_AGGRESSIVE)
+
+        // River STRONG facing big bet (>ceiling), dry board
+        // instinct = 41 + 5 (winning) + 12 (GOT_BLUFFED) + 10 (LAG) + 8 (specific bluffer) = 76 > 75
+        val decision = strategy.decide(ctx(
+            tier = HandStrengthTier.STRONG,
+            street = Street.RIVER,
+            facingBet = true,
+            betToCall = 90,
+            potSize = 100,
+            instinct = 41,
+            sessionStats = winningStats,
+            bettorRead = lagRead
+        ))
+        assertEquals(ActionType.CALL, decision.action.type,
+            "Should call with all the loosening adjustments combined")
     }
 }

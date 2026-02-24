@@ -62,5 +62,12 @@ data class DecisionContext(
     val instinct: Int,
 
     // ── Profile (archetype tuning knobs) ────────────────────
-    val profile: PlayerProfile
+    val profile: PlayerProfile,
+
+    // ── Session context (Phase 7) ───────────────────────────
+    val sessionStats: SessionStats? = null,
+    val opponents: List<OpponentRead> = emptyList(),
+
+    // ── Opponent making the bet we're facing ────────────────
+    val bettorRead: OpponentRead? = null
 )

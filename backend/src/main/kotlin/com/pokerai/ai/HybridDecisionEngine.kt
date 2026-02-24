@@ -4,7 +4,9 @@ import com.pokerai.model.*
 
 class HybridDecisionEngine(
     private val llmClient: LlmClient,
-    private val confidenceThreshold: Double = 0.45
+    private val confidenceThreshold: Double = 0.45,
+    private val sessionTracker: SessionTracker? = null,
+    private val opponentModeler: OpponentModeler? = null
 ) {
     suspend fun decide(player: Player, state: GameState): Action {
         val profile = player.profile
@@ -13,7 +15,11 @@ class HybridDecisionEngine(
         val strategy = profile.archetype.getStrategy()
             ?: return llmClient.getDecision(player, state)
 
-        val ctx = DecisionContextBuilder.build(player, state)
+        val ctx = DecisionContextBuilder.build(
+            player, state,
+            sessionTracker = sessionTracker,
+            opponentModeler = opponentModeler
+        )
         val decision = strategy.decide(ctx)
 
         if (decision.confidence >= confidenceThreshold) {

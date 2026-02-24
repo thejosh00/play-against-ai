@@ -5,7 +5,11 @@ import com.pokerai.model.*
 class AiDecisionService(
     private val preFlopStrategy: PreFlopStrategy = PreFlopStrategy(),
     private val llmClient: LlmClient,
-    private val hybridEngine: HybridDecisionEngine = HybridDecisionEngine(llmClient)
+    private val sessionTracker: SessionTracker? = null,
+    private val opponentModeler: OpponentModeler? = null,
+    private val hybridEngine: HybridDecisionEngine = HybridDecisionEngine(
+        llmClient, sessionTracker = sessionTracker, opponentModeler = opponentModeler
+    )
 ) {
     suspend fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): Action {
         val action = if (state.phase == GamePhase.PRE_FLOP) {

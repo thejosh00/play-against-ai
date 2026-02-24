@@ -141,9 +141,53 @@ object LlmPromptBuilder {
             - Turn: ${ctx.actions.turnNarrative}
             - River: ${ctx.actions.riverNarrative}
 
-            INSTINCT: ${ctx.instinct}$suggestedAction
+            ${buildSessionSection(ctx)}${buildOpponentSection(ctx)}INSTINCT: ${ctx.instinct}$suggestedAction
 
             What is your action?
         """.trimIndent()
+    }
+
+    private fun buildSessionSection(ctx: DecisionContext): String {
+        return ctx.sessionStats?.let { stats ->
+            val trend = when {
+                stats.resultBB > 10 -> "winning (up ${String.format("%.1f", stats.resultBB)} BB)"
+                stats.resultBB < -10 -> "losing (down ${String.format("%.1f", -stats.resultBB)} BB)"
+                else -> "roughly even"
+            }
+            val recentEvent = stats.recentShowdowns.firstOrNull()?.let { memory ->
+                when (memory.event) {
+                    ShowdownEvent.GOT_BLUFFED -> "You were bluffed ${memory.handsAgo} hands ago by ${memory.opponentName}"
+                    ShowdownEvent.CALLED_AND_LOST -> "You called and lost ${memory.handsAgo} hands ago"
+                    ShowdownEvent.CALLED_AND_WON -> "You called and won ${memory.handsAgo} hands ago"
+                    ShowdownEvent.SAW_OPPONENT_BLUFF -> "${memory.opponentName} was caught bluffing ${memory.handsAgo} hands ago"
+                    ShowdownEvent.SAW_BIG_POT_LOSS -> "A big pot was lost ${memory.handsAgo} hands ago"
+                }
+            } ?: "No recent notable showdowns"
+
+            """SESSION:
+            - Session trend: $trend over ${stats.handsPlayed} hands
+            - Recent event: $recentEvent
+
+            """
+        } ?: ""
+    }
+
+    private fun buildOpponentSection(ctx: DecisionContext): String {
+        if (ctx.opponents.isEmpty()) return ""
+
+        val opponentLines = ctx.opponents.joinToString("\n            ") { opp ->
+            val typeStr = if (opp.playerType != OpponentType.UNKNOWN) {
+                " — ${opp.playerType.name.lowercase().replace('_', ' ')}"
+            } else {
+                " — unknown style"
+            }
+            val notable = opp.recentNotableAction?.let { " ($it)" } ?: ""
+            "- ${opp.position.label} (${opp.playerName}): ${opp.stack} chips$typeStr$notable"
+        }
+
+        return """OPPONENTS:
+            $opponentLines
+
+            """
     }
 }

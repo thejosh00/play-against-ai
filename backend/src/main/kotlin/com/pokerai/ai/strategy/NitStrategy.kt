@@ -1,7 +1,6 @@
 package com.pokerai.ai.strategy
 
-import com.pokerai.ai.DecisionContext
-import com.pokerai.ai.Street
+import com.pokerai.ai.*
 import com.pokerai.analysis.BoardWetness
 import com.pokerai.analysis.HandStrengthTier
 import com.pokerai.analysis.PotType
@@ -56,6 +55,50 @@ class NitStrategy : ArchetypeStrategy {
         // Wet boards make nits more cautious
         if (ctx.board.wetness == BoardWetness.VERY_WET) {
             instinct -= 5
+        }
+
+        // ── Session result adjustment ──────────────────────────
+        ctx.sessionStats?.let { session ->
+            when {
+                session.resultBB < -30.0 -> instinct -= 10
+                session.resultBB < -15.0 -> instinct -= 5
+                session.resultBB > 30.0 -> instinct += 5
+            }
+        }
+
+        // ── Recent showdown adjustment ─────────────────────────
+        ctx.sessionStats?.recentShowdowns?.let { showdowns ->
+            val recent = showdowns.firstOrNull { it.handsAgo <= 5 }
+            if (recent != null) {
+                when (recent.event) {
+                    ShowdownEvent.GOT_BLUFFED -> instinct += 12
+                    ShowdownEvent.CALLED_AND_LOST -> instinct -= 10
+                    ShowdownEvent.CALLED_AND_WON -> instinct += 5
+                    ShowdownEvent.SAW_OPPONENT_BLUFF -> instinct += 5
+                    ShowdownEvent.SAW_BIG_POT_LOSS -> instinct -= 5
+                }
+            }
+        }
+
+        // ── Opponent type adjustment ───────────────────────────
+        ctx.bettorRead?.let { bettor ->
+            when (bettor.playerType) {
+                OpponentType.LOOSE_AGGRESSIVE -> instinct += 10
+                OpponentType.LOOSE_PASSIVE -> instinct += 5
+                OpponentType.TIGHT_AGGRESSIVE -> instinct -= 15
+                OpponentType.TIGHT_PASSIVE -> instinct -= 10
+                OpponentType.UNKNOWN -> {}
+            }
+        }
+
+        // ── Recent bluff by the bettor specifically ────────────
+        if (ctx.bettorRead != null) {
+            ctx.sessionStats?.recentShowdowns
+                ?.filter { it.opponentIndex == ctx.bettorRead.playerIndex && it.handsAgo <= 10 }
+                ?.firstOrNull { it.event == ShowdownEvent.GOT_BLUFFED || it.event == ShowdownEvent.SAW_OPPONENT_BLUFF }
+                ?.let {
+                    instinct += 8
+                }
         }
 
         return instinct.coerceIn(1, 100)

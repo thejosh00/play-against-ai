@@ -25,7 +25,9 @@ object DecisionContextBuilder {
     fun build(
         player: Player,
         state: GameState,
-        instinctOverride: Int? = null
+        instinctOverride: Int? = null,
+        sessionTracker: SessionTracker? = null,
+        opponentModeler: OpponentModeler? = null
     ): DecisionContext {
         val holeCards = player.holeCards
             ?: error("Player ${player.name} has no hole cards")
@@ -63,6 +65,18 @@ object DecisionContextBuilder {
         val shortestOpponentStack = opponents.minOfOrNull { it.chips } ?: player.chips
         val effectiveStack = minOf(player.chips, shortestOpponentStack)
 
+        // Phase 7: Session and opponent context
+        val sessionStats = sessionTracker?.getStats(player.index, player.chips)
+        val opponentReads = opponentModeler?.getOpponentReads(state.players, player.index) ?: emptyList()
+
+        val facingBet = betToCall > 0
+        val bettorIndex = if (facingBet) {
+            actions.currentStreetAggressor
+        } else null
+        val bettorRead = bettorIndex?.let { idx ->
+            opponentReads.firstOrNull { it.playerIndex == idx }
+        }
+
         return DecisionContext(
             hand = hand,
             board = board,
@@ -84,12 +98,15 @@ object DecisionContextBuilder {
             position = player.position,
             isAggressor = actions.currentStreetAggressor == player.index,
             isInitiator = actions.initiativeHolder == player.index,
-            facingBet = betToCall > 0,
+            facingBet = facingBet,
             facingRaise = determineFacingRaise(actions, player.index, state.phase),
             numBetsThisStreet = actions.numBetsCurrentStreet,
             potType = actions.potType,
             instinct = instinctOverride ?: Random.nextInt(1, 101),
-            profile = profile
+            profile = profile,
+            sessionStats = sessionStats,
+            opponents = opponentReads,
+            bettorRead = bettorRead
         )
     }
 
