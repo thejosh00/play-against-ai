@@ -217,11 +217,11 @@ object ScenarioLibrary {
             correct(ActionType.FOLD, weight = 0.7)
             correct(ActionType.CALL, weight = 0.7)
             correct(ActionType.RAISE, weight = 0.4)
-            distribution("Nit", ActionDistribution(0.70..0.95, 0.0..0.05, 0.05..0.25, 0.0..0.05))
-            distribution("Calling Station", ActionDistribution(0.0..0.10, 0.0..0.05, 0.80..1.0, 0.0..0.10))
-            distribution("LAG", ActionDistribution(0.10..0.30, 0.0..0.05, 0.30..0.50, 0.25..0.50))
-            distribution("TAG", ActionDistribution(0.40..0.65, 0.0..0.05, 0.30..0.50, 0.05..0.15))
-            distribution("Shark", ActionDistribution(0.20..0.45, 0.0..0.05, 0.35..0.55, 0.10..0.30))
+            distribution(NitArchetype, ActionDistribution(0.70..0.95, 0.0..0.05, 0.05..0.25, 0.0..0.05))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.10, 0.0..0.05, 0.80..1.0, 0.0..0.10))
+            distribution(LagArchetype, ActionDistribution(0.10..0.30, 0.0..0.05, 0.30..0.50, 0.25..0.50))
+            distribution(TagArchetype, ActionDistribution(0.40..0.65, 0.0..0.05, 0.30..0.50, 0.05..0.15))
+            distribution(SharkArchetype, ActionDistribution(0.20..0.45, 0.0..0.05, 0.35..0.55, 0.10..0.30))
         },
 
         // AF-02: Strong hand checked to
@@ -240,11 +240,11 @@ object ScenarioLibrary {
             correct(ActionType.RAISE, weight = 1.0, minAmount = 17, maxAmount = 50)
             correct(ActionType.CHECK, weight = 0.4)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.25..0.45, 0.0..0.0, 0.55..0.75))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.60..0.85, 0.0..0.0, 0.15..0.40))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.05..0.20, 0.0..0.0, 0.80..0.95))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.15..0.30, 0.0..0.0, 0.70..0.85))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.25..0.45, 0.0..0.0, 0.55..0.75))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.25..0.45, 0.0..0.0, 0.55..0.75))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.60..0.85, 0.0..0.0, 0.15..0.40))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.05..0.20, 0.0..0.0, 0.80..0.95))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.15..0.30, 0.0..0.0, 0.70..0.85))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.25..0.45, 0.0..0.0, 0.55..0.75))
         },
 
         // AF-03: Nothing on the river, checked to — bluff willingness
@@ -263,11 +263,11 @@ object ScenarioLibrary {
             headsUp()
             correct(ActionType.CHECK, weight = 0.7)
             correct(ActionType.RAISE, weight = 0.5, minAmount = 90, maxAmount = 360)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.90..1.0, 0.0..0.0, 0.0..0.10))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.85..1.0, 0.0..0.0, 0.0..0.15))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.40..0.60, 0.0..0.0, 0.40..0.60))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.75..0.90, 0.0..0.0, 0.10..0.25))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.50..0.70, 0.0..0.0, 0.30..0.50))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.90..1.0, 0.0..0.0, 0.0..0.10))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.85..1.0, 0.0..0.0, 0.0..0.15))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.40..0.60, 0.0..0.0, 0.40..0.60))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.75..0.90, 0.0..0.0, 0.10..0.25))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.50..0.70, 0.0..0.0, 0.30..0.50))
         },
 
         // AF-04: Monster facing a river bet
@@ -285,11 +285,11 @@ object ScenarioLibrary {
             correct(ActionType.CALL, weight = 0.6)
             correct(ActionType.RAISE, weight = 1.0, minAmount = 334, maxAmount = 750)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.05, 0.0..0.0, 0.75..0.95, 0.05..0.25))
-            distribution("Calling Station", ActionDistribution(0.0..0.05, 0.0..0.0, 0.75..0.95, 0.05..0.25))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.0..0.0, 0.25..0.45, 0.55..0.75))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.0..0.0, 0.40..0.60, 0.40..0.60))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.0..0.0, 0.35..0.55, 0.45..0.65))
+            distribution(NitArchetype, ActionDistribution(0.0..0.05, 0.0..0.0, 0.75..0.95, 0.05..0.25))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.05, 0.0..0.0, 0.75..0.95, 0.05..0.25))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.0..0.0, 0.25..0.45, 0.55..0.75))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.0..0.0, 0.40..0.60, 0.40..0.60))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.0..0.0, 0.35..0.55, 0.45..0.65))
         },
 
         // AF-05: Medium hand facing a large turn bet
@@ -307,11 +307,11 @@ object ScenarioLibrary {
             headsUp()
             correct(ActionType.FOLD, weight = 0.8)
             correct(ActionType.CALL, weight = 0.5)
-            distribution("Nit", ActionDistribution(0.80..0.95, 0.0..0.0, 0.05..0.20, 0.0..0.05))
-            distribution("Calling Station", ActionDistribution(0.05..0.20, 0.0..0.0, 0.75..0.95, 0.0..0.05))
-            distribution("LAG", ActionDistribution(0.25..0.45, 0.0..0.0, 0.35..0.55, 0.10..0.25))
-            distribution("TAG", ActionDistribution(0.55..0.75, 0.0..0.0, 0.25..0.45, 0.0..0.10))
-            distribution("Shark", ActionDistribution(0.40..0.60, 0.0..0.0, 0.30..0.50, 0.05..0.20))
+            distribution(NitArchetype, ActionDistribution(0.80..0.95, 0.0..0.0, 0.05..0.20, 0.0..0.05))
+            distribution(CallingStationArchetype, ActionDistribution(0.05..0.20, 0.0..0.0, 0.75..0.95, 0.0..0.05))
+            distribution(LagArchetype, ActionDistribution(0.25..0.45, 0.0..0.0, 0.35..0.55, 0.10..0.25))
+            distribution(TagArchetype, ActionDistribution(0.55..0.75, 0.0..0.0, 0.25..0.45, 0.0..0.10))
+            distribution(SharkArchetype, ActionDistribution(0.40..0.60, 0.0..0.0, 0.30..0.50, 0.05..0.20))
         },
 
         // AF-06: C-bet opportunity with air
@@ -330,11 +330,11 @@ object ScenarioLibrary {
             correct(ActionType.RAISE, weight = 0.7, minAmount = 17, maxAmount = 50)
             correct(ActionType.CHECK, weight = 0.7)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.55..0.80, 0.0..0.0, 0.20..0.45))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.80..0.95, 0.0..0.0, 0.05..0.20))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.10..0.25, 0.0..0.0, 0.75..0.90))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.35..0.55, 0.0..0.0, 0.45..0.65))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.30..0.50, 0.0..0.0, 0.50..0.70))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.55..0.80, 0.0..0.0, 0.20..0.45))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.80..0.95, 0.0..0.0, 0.05..0.20))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.10..0.25, 0.0..0.0, 0.75..0.90))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.35..0.55, 0.0..0.0, 0.45..0.65))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.30..0.50, 0.0..0.0, 0.50..0.70))
         },
 
         // AF-07: Facing a raise with a strong hand
@@ -354,11 +354,11 @@ object ScenarioLibrary {
             correct(ActionType.CALL, weight = 0.7)
             correct(ActionType.FOLD, weight = 0.5)
             correct(ActionType.RAISE, weight = 0.4, minAmount = 240, maxAmount = 500)
-            distribution("Nit", ActionDistribution(0.55..0.80, 0.0..0.0, 0.20..0.40, 0.0..0.05))
-            distribution("Calling Station", ActionDistribution(0.0..0.10, 0.0..0.0, 0.80..0.95, 0.0..0.10))
-            distribution("LAG", ActionDistribution(0.05..0.20, 0.0..0.0, 0.40..0.60, 0.25..0.45))
-            distribution("TAG", ActionDistribution(0.30..0.50, 0.0..0.0, 0.40..0.60, 0.05..0.15))
-            distribution("Shark", ActionDistribution(0.15..0.35, 0.0..0.0, 0.40..0.60, 0.15..0.30))
+            distribution(NitArchetype, ActionDistribution(0.55..0.80, 0.0..0.0, 0.20..0.40, 0.0..0.05))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.10, 0.0..0.0, 0.80..0.95, 0.0..0.10))
+            distribution(LagArchetype, ActionDistribution(0.05..0.20, 0.0..0.0, 0.40..0.60, 0.25..0.45))
+            distribution(TagArchetype, ActionDistribution(0.30..0.50, 0.0..0.0, 0.40..0.60, 0.05..0.15))
+            distribution(SharkArchetype, ActionDistribution(0.15..0.35, 0.0..0.0, 0.40..0.60, 0.15..0.30))
         },
 
         // AF-08: Flush draw facing a bet
@@ -378,11 +378,11 @@ object ScenarioLibrary {
             correct(ActionType.CALL, weight = 1.0)
             correct(ActionType.RAISE, weight = 0.6, minAmount = 80, maxAmount = 200)
             correct(ActionType.FOLD, weight = 0.3)
-            distribution("Nit", ActionDistribution(0.30..0.55, 0.0..0.0, 0.40..0.65, 0.0..0.10))
-            distribution("Calling Station", ActionDistribution(0.0..0.10, 0.0..0.0, 0.85..1.0, 0.0..0.05))
-            distribution("LAG", ActionDistribution(0.0..0.10, 0.0..0.0, 0.30..0.50, 0.40..0.65))
-            distribution("TAG", ActionDistribution(0.10..0.25, 0.0..0.0, 0.55..0.75, 0.10..0.25))
-            distribution("Shark", ActionDistribution(0.05..0.20, 0.0..0.0, 0.40..0.60, 0.25..0.45))
+            distribution(NitArchetype, ActionDistribution(0.30..0.55, 0.0..0.0, 0.40..0.65, 0.0..0.10))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.10, 0.0..0.0, 0.85..1.0, 0.0..0.05))
+            distribution(LagArchetype, ActionDistribution(0.0..0.10, 0.0..0.0, 0.30..0.50, 0.40..0.65))
+            distribution(TagArchetype, ActionDistribution(0.10..0.25, 0.0..0.0, 0.55..0.75, 0.10..0.25))
+            distribution(SharkArchetype, ActionDistribution(0.05..0.20, 0.0..0.0, 0.40..0.60, 0.25..0.45))
         },
 
         // AF-09: Multiway pot — aggression suppression
@@ -402,11 +402,11 @@ object ScenarioLibrary {
             correct(ActionType.CHECK, weight = 0.8)
             correct(ActionType.RAISE, weight = 0.4, minAmount = 40, maxAmount = 120)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.85..1.0, 0.0..0.0, 0.0..0.15))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.90..1.0, 0.0..0.0, 0.0..0.10))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.35..0.55, 0.0..0.0, 0.45..0.65))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.55..0.75, 0.0..0.0, 0.25..0.45))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.50..0.70, 0.0..0.0, 0.30..0.50))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.85..1.0, 0.0..0.0, 0.0..0.15))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.90..1.0, 0.0..0.0, 0.0..0.10))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.35..0.55, 0.0..0.0, 0.45..0.65))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.55..0.75, 0.0..0.0, 0.25..0.45))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.50..0.70, 0.0..0.0, 0.30..0.50))
         },
 
         // AF-10: River value bet opportunity
@@ -425,11 +425,11 @@ object ScenarioLibrary {
             correct(ActionType.RAISE, weight = 1.0, minAmount = 47, maxAmount = 140)
             correct(ActionType.CHECK, weight = 0.4)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.40..0.65, 0.0..0.0, 0.35..0.60))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.70..0.90, 0.0..0.0, 0.10..0.30))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.05..0.20, 0.0..0.0, 0.80..0.95))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.15..0.35, 0.0..0.0, 0.65..0.85))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.40..0.65, 0.0..0.0, 0.35..0.60))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.70..0.90, 0.0..0.0, 0.10..0.30))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.05..0.20, 0.0..0.0, 0.80..0.95))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.15..0.35, 0.0..0.0, 0.65..0.85))
         },
 
         // AF-11: Turn barrel decision
@@ -449,11 +449,11 @@ object ScenarioLibrary {
             correct(ActionType.RAISE, weight = 0.6, minAmount = 33, maxAmount = 100)
             correct(ActionType.CHECK, weight = 0.6)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.70..0.90, 0.0..0.0, 0.10..0.30))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.80..0.95, 0.0..0.0, 0.05..0.20))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.45..0.65, 0.0..0.0, 0.35..0.55))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.35..0.55, 0.0..0.0, 0.45..0.65))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.70..0.90, 0.0..0.0, 0.10..0.30))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.80..0.95, 0.0..0.0, 0.05..0.20))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.45..0.65, 0.0..0.0, 0.35..0.55))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.35..0.55, 0.0..0.0, 0.45..0.65))
         },
 
         // AF-12: Facing overbet
@@ -470,11 +470,11 @@ object ScenarioLibrary {
             headsUp()
             correct(ActionType.CALL, weight = 0.6)
             correct(ActionType.FOLD, weight = 0.6)
-            distribution("Nit", ActionDistribution(0.75..0.95, 0.0..0.0, 0.05..0.25, 0.0..0.05))
-            distribution("Calling Station", ActionDistribution(0.10..0.25, 0.0..0.0, 0.70..0.90, 0.0..0.05))
-            distribution("LAG", ActionDistribution(0.20..0.40, 0.0..0.0, 0.40..0.60, 0.10..0.25))
-            distribution("TAG", ActionDistribution(0.45..0.65, 0.0..0.0, 0.30..0.50, 0.0..0.10))
-            distribution("Shark", ActionDistribution(0.30..0.50, 0.0..0.0, 0.40..0.60, 0.05..0.15))
+            distribution(NitArchetype, ActionDistribution(0.75..0.95, 0.0..0.0, 0.05..0.25, 0.0..0.05))
+            distribution(CallingStationArchetype, ActionDistribution(0.10..0.25, 0.0..0.0, 0.70..0.90, 0.0..0.05))
+            distribution(LagArchetype, ActionDistribution(0.20..0.40, 0.0..0.0, 0.40..0.60, 0.10..0.25))
+            distribution(TagArchetype, ActionDistribution(0.45..0.65, 0.0..0.0, 0.30..0.50, 0.0..0.10))
+            distribution(SharkArchetype, ActionDistribution(0.30..0.50, 0.0..0.0, 0.40..0.60, 0.05..0.15))
         },
 
         // AF-13: Air out of position
@@ -492,11 +492,11 @@ object ScenarioLibrary {
             correct(ActionType.CHECK, weight = 1.0)
             correct(ActionType.RAISE, weight = 0.2, minAmount = 20, maxAmount = 60)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.95..1.0, 0.0..0.0, 0.0..0.05))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.90..1.0, 0.0..0.0, 0.0..0.10))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.60..0.80, 0.0..0.0, 0.20..0.40))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.85..0.95, 0.0..0.0, 0.05..0.15))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.70..0.85, 0.0..0.0, 0.15..0.30))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.95..1.0, 0.0..0.0, 0.0..0.05))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.90..1.0, 0.0..0.0, 0.0..0.10))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.60..0.80, 0.0..0.0, 0.20..0.40))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.85..0.95, 0.0..0.0, 0.05..0.15))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.70..0.85, 0.0..0.0, 0.15..0.30))
         },
 
         // AF-14: Small river bet with medium hand
@@ -514,11 +514,11 @@ object ScenarioLibrary {
             correct(ActionType.CALL, weight = 0.8)
             correct(ActionType.FOLD, weight = 0.4)
             correct(ActionType.RAISE, weight = 0.2, minAmount = 60, maxAmount = 200)
-            distribution("Nit", ActionDistribution(0.35..0.55, 0.0..0.0, 0.40..0.60, 0.0..0.05))
-            distribution("Calling Station", ActionDistribution(0.0..0.05, 0.0..0.0, 0.90..1.0, 0.0..0.05))
-            distribution("LAG", ActionDistribution(0.10..0.25, 0.0..0.0, 0.45..0.65, 0.15..0.35))
-            distribution("TAG", ActionDistribution(0.20..0.40, 0.0..0.0, 0.55..0.75, 0.0..0.10))
-            distribution("Shark", ActionDistribution(0.15..0.30, 0.0..0.0, 0.50..0.70, 0.10..0.25))
+            distribution(NitArchetype, ActionDistribution(0.35..0.55, 0.0..0.0, 0.40..0.60, 0.0..0.05))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.05, 0.0..0.0, 0.90..1.0, 0.0..0.05))
+            distribution(LagArchetype, ActionDistribution(0.10..0.25, 0.0..0.0, 0.45..0.65, 0.15..0.35))
+            distribution(TagArchetype, ActionDistribution(0.20..0.40, 0.0..0.0, 0.55..0.75, 0.0..0.10))
+            distribution(SharkArchetype, ActionDistribution(0.15..0.30, 0.0..0.0, 0.50..0.70, 0.10..0.25))
         },
 
         // AF-15: Monster on wet board
@@ -538,11 +538,11 @@ object ScenarioLibrary {
             correct(ActionType.RAISE, weight = 1.0, minAmount = 27, maxAmount = 80)
             correct(ActionType.CHECK, weight = 0.3)
             wrong(ActionType.FOLD)
-            distribution("Nit", ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
-            distribution("Calling Station", ActionDistribution(0.0..0.0, 0.50..0.75, 0.0..0.0, 0.25..0.50))
-            distribution("LAG", ActionDistribution(0.0..0.0, 0.05..0.20, 0.0..0.0, 0.80..0.95))
-            distribution("TAG", ActionDistribution(0.0..0.0, 0.10..0.25, 0.0..0.0, 0.75..0.90))
-            distribution("Shark", ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
+            distribution(NitArchetype, ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
+            distribution(CallingStationArchetype, ActionDistribution(0.0..0.0, 0.50..0.75, 0.0..0.0, 0.25..0.50))
+            distribution(LagArchetype, ActionDistribution(0.0..0.0, 0.05..0.20, 0.0..0.0, 0.80..0.95))
+            distribution(TagArchetype, ActionDistribution(0.0..0.0, 0.10..0.25, 0.0..0.0, 0.75..0.90))
+            distribution(SharkArchetype, ActionDistribution(0.0..0.0, 0.20..0.40, 0.0..0.0, 0.60..0.80))
         }
     )
 

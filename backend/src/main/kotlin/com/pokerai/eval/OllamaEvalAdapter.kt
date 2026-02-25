@@ -56,12 +56,21 @@ class OllamaEvalAdapter(
                     OllamaMessage("user", userPrompt)
                 ),
                 stream = false,
-                options = OllamaEvalOptions(temperature = temperature, num_predict = 200)
+                options = OllamaEvalOptions(temperature = temperature, num_predict = 1512)
             ))
         }
 
         val responseText = response.bodyAsText()
         val parsed = appJson.decodeFromString<OllamaChatResponse>(responseText)
+
+        if (parsed.done_reason == "length") {
+            val hasThinking = !parsed.message?.thinking.isNullOrBlank()
+            val contentEmpty = parsed.message?.content.isNullOrBlank()
+            if (hasThinking && contentEmpty) {
+                error("Model $modelName exhausted token budget on thinking and produced no content. Increase num_predict.")
+            }
+        }
+
         return parsed.message?.content ?: ""
     }
 }

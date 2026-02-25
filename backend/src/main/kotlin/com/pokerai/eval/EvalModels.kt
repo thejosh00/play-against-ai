@@ -3,6 +3,7 @@ package com.pokerai.eval
 import com.pokerai.ai.DecisionContext
 import com.pokerai.analysis.PotType
 import com.pokerai.model.*
+import com.pokerai.model.archetype.PlayerArchetype
 
 // ── Scenario Definition ──────────────────────────────────
 
@@ -61,7 +62,7 @@ data class EvalScenario(
     val expectedReasoningKeywords: Set<String> = emptySet(),
 
     // For fidelity/consistency testing: expected distribution per archetype
-    val archetypeDistributions: Map<String, ActionDistribution>? = null
+    val archetypeDistributions: Map<PlayerArchetype, ActionDistribution>? = null
 )
 
 // ── Parse Result ─────────────────────────────────────────

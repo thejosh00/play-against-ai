@@ -77,7 +77,7 @@ object ScenarioBuilder {
         private val correctActions = mutableListOf<WeightedAction>()
         private val wrongActions = mutableSetOf<ActionType>()
         private val expectedKeywords = mutableSetOf<String>()
-        private var distributions: MutableMap<String, ActionDistribution>? = null
+        private var distributions: MutableMap<PlayerArchetype, ActionDistribution>? = null
 
         // ── DSL Methods ──
 
@@ -154,9 +154,9 @@ object ScenarioBuilder {
             expectedKeywords.addAll(words)
         }
 
-        fun distribution(archetypeName: String, dist: ActionDistribution) {
+        fun distribution(archetype: PlayerArchetype, dist: ActionDistribution) {
             if (distributions == null) distributions = mutableMapOf()
-            distributions!![archetypeName] = dist
+            distributions!![archetype] = dist
         }
 
         // ── Build ──

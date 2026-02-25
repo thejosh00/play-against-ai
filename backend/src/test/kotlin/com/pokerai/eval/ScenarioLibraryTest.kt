@@ -1,6 +1,7 @@
 package com.pokerai.eval
 
 import com.pokerai.model.ActionType
+import com.pokerai.model.archetype.*
 import kotlin.test.*
 
 class ScenarioLibraryTest {
@@ -54,7 +55,7 @@ class ScenarioLibraryTest {
 
     @Test
     fun `fidelity scenarios have distributions for all 5 archetypes`() {
-        val expectedArchetypes = setOf("Nit", "Calling Station", "LAG", "TAG", "Shark")
+        val expectedArchetypes = setOf(NitArchetype, CallingStationArchetype, LagArchetype, TagArchetype, SharkArchetype)
         ScenarioLibrary.byCategory(ScenarioCategory.ARCHETYPE_FIDELITY).forEach { scenario ->
             assertNotNull(scenario.archetypeDistributions, "Fidelity scenario ${scenario.id} missing distributions")
             val keys = scenario.archetypeDistributions!!.keys

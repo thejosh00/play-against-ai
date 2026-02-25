@@ -15,7 +15,8 @@ class EvalRunner(
     private val scenarios: List<EvalScenario>,
     private val repetitions: Int = 5,
     private val temperature: Double = 0.7,
-    private val delayBetweenCallsMs: Long = 100
+    private val delayBetweenCallsMs: Long = 100,
+    private val reasoningJudge: ReasoningJudge? = null
 ) {
     private val fidelityArchetypes: List<PlayerArchetype> = listOf(
         NitArchetype, CallingStationArchetype, LagArchetype, TagArchetype, SharkArchetype
@@ -134,7 +135,9 @@ class EvalRunner(
             archetypeName = archetype.displayName,
             formatScore = Scorer.scoreFormat(parseResult),
             strategyScore = Scorer.scoreStrategy(action, scenario),
-            reasoningScore = Scorer.scoreReasoning(reasoning, scenario, action),
+            reasoningScore = Scorer.scoreReasoningWithJudge(
+                reasoning, scenario, action, archetype.displayName, reasoningJudge
+            ),
             action = action,
             reasoning = reasoning,
             rawResponse = rawResponse,

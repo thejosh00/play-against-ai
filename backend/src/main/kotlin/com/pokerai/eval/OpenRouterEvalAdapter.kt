@@ -52,7 +52,7 @@ class OpenRouterEvalAdapter(
                     OpenRouterMessage("user", userPrompt)
                 ),
                 temperature = temperature,
-                max_tokens = 200
+                max_tokens = 8192
             ))
         }
 

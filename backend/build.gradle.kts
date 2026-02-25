@@ -59,3 +59,10 @@ kotlin {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.register<JavaExec>("runEval") {
+    description = "Run the LLM poker evaluation framework"
+    group = "application"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.pokerai.eval.EvalCliKt")
+}

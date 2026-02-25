@@ -33,12 +33,12 @@ object ReportPrinter {
 
         for (model in models.sortedByDescending { it.weightedTotal }) {
             val name = model.modelName.take(23).padEnd(23)
-            val format = String.format("%5.1f", model.formatScore)
-            val fidelity = String.format("%7.1f", model.fidelityScore)
-            val strategy = String.format("%7.1f", model.strategyScore)
-            val reasoning = String.format("%8.1f", model.reasoningScore)
-            val consistency = String.format("%10.1f", model.consistencyScore)
-            val total = String.format("%4.1f", model.weightedTotal)
+            val format = String.format("%6.1f", model.formatScore)
+            val fidelity = String.format("%8.1f", model.fidelityScore)
+            val strategy = String.format("%8.1f", model.strategyScore)
+            val reasoning = String.format("%9.1f", model.reasoningScore)
+            val consistency = String.format("%11.1f", model.consistencyScore)
+            val total = String.format("%5.1f", model.weightedTotal)
             println("│ $name │ $format │ $fidelity │ $strategy │ $reasoning │ $consistency │ $total │")
         }
 

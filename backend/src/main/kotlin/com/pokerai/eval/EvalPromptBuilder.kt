@@ -41,26 +41,6 @@ object EvalPromptBuilder {
         )
     }
 
-    /**
-     * Build a user prompt with a coded suggestion included.
-     * Used for testing the "fallback with hint" scenario.
-     */
-    fun buildUserPromptWithSuggestion(
-        scenario: EvalScenario,
-        codedSuggestion: ActionDecision
-    ): String {
-        val profile = scenario.context.profile
-        val fakePlayer = createFakePlayer(profile)
-        val fakeState = createMinimalGameState(scenario.context)
-
-        return LlmPromptBuilder.buildEnrichedUserPrompt(
-            player = fakePlayer,
-            state = fakeState,
-            ctx = scenario.context,
-            codedSuggestion = codedSuggestion
-        )
-    }
-
     private fun createFakePlayer(profile: PlayerProfile): Player {
         return Player(
             index = 0,

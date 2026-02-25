@@ -120,6 +120,26 @@ object Scorer {
         return score.coerceAtMost(3)
     }
 
+    // ── Reasoning with Judge (0-3) ──────────────────────
+
+    /**
+     * Score reasoning using the LLM judge if available, else fall back to heuristic.
+     *
+     * This is the method the EvalRunner should use.
+     */
+    suspend fun scoreReasoningWithJudge(
+        reasoning: String?,
+        scenario: EvalScenario,
+        chosenAction: Action?,
+        archetypeName: String,
+        judge: ReasoningJudge?
+    ): Int {
+        if (judge != null) {
+            return judge.scoreReasoning(reasoning, scenario, chosenAction, archetypeName)
+        }
+        return scoreReasoning(reasoning, scenario, chosenAction)
+    }
+
     // ── Consistency Scoring (0-3) ────────────────────────
 
     /**

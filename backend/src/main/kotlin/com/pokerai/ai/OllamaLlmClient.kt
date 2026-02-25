@@ -17,7 +17,11 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 @Serializable
-data class OllamaMessage(val role: String, val content: String)
+data class OllamaMessage(
+    val role: String,
+    val content: String,
+    val thinking: String? = null
+)
 
 @Serializable
 data class OllamaChatRequest(
@@ -29,7 +33,8 @@ data class OllamaChatRequest(
 @Serializable
 data class OllamaChatResponse(
     val message: OllamaMessage? = null,
-    val done: Boolean = false
+    val done: Boolean = false,
+    val done_reason: String? = null
 )
 
 class OllamaLlmClient(
