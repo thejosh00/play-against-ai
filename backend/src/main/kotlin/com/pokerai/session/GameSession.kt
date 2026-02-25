@@ -22,7 +22,7 @@ class GameSession(
         sessionTracker = sessionTracker,
         opponentModeler = opponentModeler
     ),
-    private val aiThinkingDelayMs: LongRange = 1000L..2000L
+    private val aiThinkingDelayMs: LongRange = 1000L..3000L
 ) {
     private var state: GameState? = null
     private var config: GameConfig? = null
@@ -31,8 +31,7 @@ class GameSession(
 
     suspend fun handleMessage(text: String) {
         try {
-            val message = appJson.decodeFromString(ClientMessage.serializer(), text)
-            when (message) {
+            when (val message = appJson.decodeFromString(ClientMessage.serializer(), text)) {
                 is ClientMessage.StartGame -> startGame(message)
                 is ClientMessage.PlayerAction -> playerActionChannel.send(message)
                 is ClientMessage.DealNextHand -> dealNextHand()
@@ -78,7 +77,6 @@ class GameSession(
         GameEngine.advanceDealer(s)
         GameEngine.startNewHand(s)
 
-        // Phase 7: Record hand start for session tracking
         sessionTracker.recordHandStart(s.players)
         opponentModeler.recordNewHand(s.players)
 
@@ -152,9 +150,12 @@ class GameSession(
                 sendActionPerformed(player, action)
             } else {
                 sendState()
-                // AI thinking delay
-                delay(aiThinkingDelayMs.random())
+                val thinkingDelay = aiThinkingDelayMs.random()
+                val start = System.currentTimeMillis()
                 val action = aiService.decide(player, s, config, tournamentState)
+                val elapsed = System.currentTimeMillis() - start
+                val remaining = thinkingDelay - elapsed
+                if (remaining > 0) delay(remaining)
                 opponentModeler.recordAction(nextToAct, action, s.phase)
                 GameEngine.applyAction(s, nextToAct, action)
                 sendActionPerformed(player, action)
