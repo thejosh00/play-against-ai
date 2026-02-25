@@ -30,7 +30,7 @@ class PreFlopStrategy(private val random: Random = Random) {
         const val FUZZ_BOUND = 10
     }
 
-    fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): Action {
+    fun decide(player: Player, state: GameState, tournamentState: TournamentState? = null, config: GameConfig? = null): Action {
         val holeCards = player.holeCards ?: error("AI player ${player.name} has no hole cards")
         val profile = player.profile ?: error("AI player ${player.name} has no profile")
         val archetype = profile.archetype
@@ -72,7 +72,7 @@ class PreFlopStrategy(private val random: Random = Random) {
 
         // Short-stack 10-20 BBs: 3-bets become shoves
         if (effectiveBBs <= 20 && scenario == Scenario.FACING_RAISE) {
-            return if (random.nextDouble() < profile.threeBetProb) {
+            return if (isTopOfRange(handIndex, cutoff, profile.threeBetProb)) {
                 Action.allIn(player.chips)
             } else {
                 val callAmount = state.currentBetLevel - player.currentBet
@@ -82,9 +82,9 @@ class PreFlopStrategy(private val random: Random = Random) {
         }
 
         return when (scenario) {
-            Scenario.OPEN -> decideOpen(player, state, profile)
-            Scenario.FACING_RAISE -> decideFacingRaise(player, state, profile)
-            Scenario.FACING_3BET -> decideFacing3Bet(player, state, profile)
+            Scenario.OPEN -> decideOpen(player, state, profile, handIndex, cutoff)
+            Scenario.FACING_RAISE -> decideFacingRaise(player, state, profile, handIndex, cutoff)
+            Scenario.FACING_3BET -> decideFacing3Bet(player, state, profile, handIndex, cutoff)
         }
     }
 
@@ -162,8 +162,19 @@ class PreFlopStrategy(private val random: Random = Random) {
         }
     }
 
-    private fun decideOpen(player: Player, state: GameState, profile: PlayerProfile): Action {
-        return if (random.nextDouble() < profile.openRaiseProb) {
+    /**
+     * Whether the hand is in the top [prob] fraction of the continuing range.
+     * Hands with a lower index are stronger, so top-of-range means handIndex
+     * sits in the first [prob] portion of the 0..cutoff range.
+     */
+    internal fun isTopOfRange(handIndex: Int, cutoff: Int, prob: Double): Boolean {
+        if (cutoff <= 0) return false
+        val position = handIndex.toDouble() / cutoff
+        return position < prob
+    }
+
+    private fun decideOpen(player: Player, state: GameState, profile: PlayerProfile, handIndex: Int, cutoff: Int): Action {
+        return if (isTopOfRange(handIndex, cutoff, profile.openRaiseProb)) {
             val sizing = openRaiseSize(player, profile, state)
             if (sizing >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
@@ -180,8 +191,8 @@ class PreFlopStrategy(private val random: Random = Random) {
         }
     }
 
-    private fun decideFacingRaise(player: Player, state: GameState, profile: PlayerProfile): Action {
-        return if (random.nextDouble() < profile.threeBetProb) {
+    private fun decideFacingRaise(player: Player, state: GameState, profile: PlayerProfile, handIndex: Int, cutoff: Int): Action {
+        return if (isTopOfRange(handIndex, cutoff, profile.threeBetProb)) {
             val raiseSize = threeBetSize(profile, state)
             if (raiseSize >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
@@ -198,8 +209,8 @@ class PreFlopStrategy(private val random: Random = Random) {
         }
     }
 
-    private fun decideFacing3Bet(player: Player, state: GameState, profile: PlayerProfile): Action {
-        return if (random.nextDouble() < profile.fourBetProb) {
+    private fun decideFacing3Bet(player: Player, state: GameState, profile: PlayerProfile, handIndex: Int, cutoff: Int): Action {
+        return if (isTopOfRange(handIndex, cutoff, profile.fourBetProb)) {
             val raiseSize = fourBetSize(profile, state)
             if (raiseSize >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
