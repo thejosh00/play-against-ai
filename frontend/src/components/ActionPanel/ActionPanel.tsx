@@ -59,10 +59,9 @@ export function ActionPanel({ state, onAction }: ActionPanelProps) {
     }
   };
 
-  const setPreset = (amount: number) => {
+  const raisePreset = (amount: number) => {
     const clamped = Math.min(amount, maxRaise);
-    setRaiseAmount(clamped);
-    setInputText(String(clamped));
+    onAction('raise', clamped);
   };
 
   const isPreFlop = state.phase === 'PRE_FLOP';
@@ -71,7 +70,6 @@ export function ActionPanel({ state, onAction }: ActionPanelProps) {
   const bbPresets = isPreFlop ? [
     { label: '2x', amount: bb * 2 },
     { label: '2.5x', amount: Math.floor(bb * 2.5) },
-    { label: '3x', amount: bb * 3 },
   ].filter(s => s.amount >= state.minimumRaise && s.amount <= maxRaise) : [];
 
   const potSizes = [
@@ -135,7 +133,7 @@ export function ActionPanel({ state, onAction }: ActionPanelProps) {
             <button
               key={ps.label}
               className="btn btn-preset"
-              onClick={() => setPreset(ps.amount)}
+              onClick={() => raisePreset(ps.amount)}
             >
               {ps.label}
             </button>
