@@ -73,7 +73,7 @@ object HandHistoryWriter {
             // Board threats for this street
             val boardAnalysis = boardAnalysisByPhase[phase]
             if (boardAnalysis != null) {
-                sb.appendLine("  Board: ${formatBoardThreats(boardAnalysis)}")
+                sb.appendLine("  Board: ${formatBoardThreats(boardAnalysis, phase)}")
             }
 
             // Hand evaluations for this street
@@ -122,19 +122,21 @@ object HandHistoryWriter {
         file.writeText(sb.toString())
     }
 
-    private fun formatBoardThreats(board: BoardAnalysis): String {
+    private fun formatBoardThreats(board: BoardAnalysis, phase: GamePhase): String {
+        val isRiver = phase == GamePhase.RIVER
+
         val flush = when {
             board.flushCompletedThisStreet -> "flush completed this street"
             board.flushPossible -> "flush possible"
-            board.flushDrawPossible -> "flush draw possible"
+            !isRiver && board.flushDrawPossible -> "flush draw possible"
             else -> "flush not possible"
         }
 
         val straight = when {
             board.straightCompletedThisStreet -> "straight completed this street"
             board.straightPossible -> "straight possible"
-            board.straightDrawHeavy -> "OESD possible"
-            board.connected -> "gutshot straight draw possible"
+            !isRiver && board.straightDrawHeavy -> "OESD possible"
+            !isRiver && board.connected -> "gutshot straight draw possible"
             else -> "straight not possible"
         }
 

@@ -150,18 +150,20 @@ object LlmPromptBuilder {
     private fun buildBoardThreats(ctx: DecisionContext): String {
         val board = ctx.board
 
+        val isRiver = ctx.street == Street.RIVER
+
         val flush = when {
             board.flushCompletedThisStreet -> "Flush completed this street"
             board.flushPossible -> "Flush possible"
-            board.flushDrawPossible -> "Flush draw possible"
+            !isRiver && board.flushDrawPossible -> "Flush draw possible"
             else -> "Flush not possible"
         }
 
         val straight = when {
             board.straightCompletedThisStreet -> "Straight completed this street"
             board.straightPossible -> "Straight possible"
-            board.straightDrawHeavy -> "OESD possible"
-            board.connected -> "Gutshot straight draw possible"
+            !isRiver && board.straightDrawHeavy -> "OESD possible"
+            !isRiver && board.connected -> "Gutshot straight draw possible"
             else -> "Straight not possible"
         }
 
