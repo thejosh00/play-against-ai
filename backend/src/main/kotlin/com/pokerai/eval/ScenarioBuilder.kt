@@ -247,6 +247,7 @@ object ScenarioBuilder {
                 facingRaise = betToCall > 0 && numBetsThisStreet > 1,
                 numBetsThisStreet = numBetsThisStreet,
                 potType = potType,
+                closesAction = false,
                 instinct = instinct,
                 profile = profile
             )

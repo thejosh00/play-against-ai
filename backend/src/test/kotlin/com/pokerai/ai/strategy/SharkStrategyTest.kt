@@ -154,6 +154,7 @@ class SharkStrategyTest {
             facingRaise = facingRaise,
             numBetsThisStreet = numBetsThisStreet,
             potType = potType,
+            closesAction = false,
             instinct = instinct,
             profile = profile,
             sessionStats = sessionStats,

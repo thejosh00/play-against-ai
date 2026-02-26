@@ -77,6 +77,8 @@ object DecisionContextBuilder {
             opponentReads.firstOrNull { it.playerIndex == idx }
         }
 
+        val closesAction = computeClosesAction(player, state)
+
         return DecisionContext(
             hand = hand,
             board = board,
@@ -102,6 +104,7 @@ object DecisionContextBuilder {
             facingRaise = determineFacingRaise(actions, player.index, state.phase),
             numBetsThisStreet = actions.numBetsCurrentStreet,
             potType = actions.potType,
+            closesAction = closesAction,
             instinct = instinctOverride ?: Random.nextInt(1, 101),
             profile = profile,
             sessionStats = sessionStats,
@@ -150,6 +153,23 @@ object DecisionContextBuilder {
         boardPairedThisStreet = false,
         description = "preflop"
     )
+
+    /**
+     * Whether this player is last to act on the current street.
+     * Post-flop action order is by seat distance from dealer (left of dealer first).
+     * Pre-flop, the BB closes (but this is less relevant for strategy).
+     */
+    private fun computeClosesAction(player: Player, state: GameState): Boolean {
+        val activePlayers = state.players.filter { it.isActive && !it.isFolded && !it.isSittingOut }
+        if (activePlayers.size <= 1) return true
+
+        val tableSize = state.players.size
+        // Sort by post-flop action order: seat distance from dealer, left of dealer first
+        val ordered = activePlayers.sortedBy {
+            (it.index - state.dealerIndex - 1 + tableSize) % tableSize
+        }
+        return ordered.last().index == player.index
+    }
 
     private fun determineFacingRaise(
         actions: ActionAnalysis,

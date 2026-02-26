@@ -308,7 +308,7 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── CHECKED TO ON THE RIVER ─────────────────────────────────────
         return when (tier) {
             HandStrengthTier.MONSTER -> {
-                if (instinct > 40)
+                if (ctx.closesAction || instinct > 40)
                     betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster on the river")
                 else checkAction(0.5, "checking monster — maybe they'll bet")
             }

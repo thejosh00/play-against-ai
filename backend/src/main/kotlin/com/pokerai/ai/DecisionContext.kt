@@ -52,6 +52,7 @@ data class DecisionContext(
     val facingRaise: Boolean,
     val numBetsThisStreet: Int,
     val potType: PotType,
+    val closesAction: Boolean,
 
     // Randomizer
     val instinct: Int,
