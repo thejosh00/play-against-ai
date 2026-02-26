@@ -72,9 +72,29 @@
   accent-color: #f39c12;
 }
 
+.raise-input {
+  width: 72px;
+  padding: 4px 8px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #2c3e50;
+  color: #ecf0f1;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.raise-input::-webkit-inner-spin-button,
+.raise-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .raise-presets {
   display: flex;
   gap: 4px;
+  justify-content: center;
 }
 
 .btn-preset {

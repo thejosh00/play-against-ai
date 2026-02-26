@@ -406,10 +406,12 @@ class LagStrategy : ArchetypeStrategy {
                     betAction(ctx, sizing, 0.8, "double barreling for value")
                 }
                 HandStrengthTier.MEDIUM -> {
-                    if (scareCard || instinct > 50) {
+                    if (scareCard) {
+                        checkAction(0.5, "checking turn — bad card, pot control")
+                    } else if (instinct > 50) {
                         betAction(ctx, sizing, 0.55, "barreling turn with medium hand")
                     } else {
-                        checkAction(0.5, "checking turn — bad card, pot control")
+                        checkAction(0.5, "checking turn, pot control")
                     }
                 }
                 HandStrengthTier.WEAK -> {
