@@ -179,7 +179,18 @@ class PreFlopStrategy(private val random: Random = Random) {
     }
 
     private fun decideOpen(player: Player, state: GameState, profile: PlayerProfile, handIndex: Int, cutoff: Int): Action {
-        return if (isTopOfRange(handIndex, cutoff, profile.openRaiseProb)) {
+        val hasLimpers = state.actionHistory.any { it.action.type == ActionType.CALL && it.phase == GamePhase.PRE_FLOP }
+        val isNit = profile.archetype is NitArchetype
+        val isCallingStation = profile.archetype is CallingStationArchetype
+
+        val positionBonus = when {
+            (isCallingStation || isNit) && player.position == Position.BTN -> 0.20
+            (isCallingStation || isNit) && player.position == Position.CO -> 0.10
+            else -> 0.0
+        }
+        // nits hate multi-way pots
+        val limperBonus = if (isNit && hasLimpers) 0.15 else 0.0
+        return if (isTopOfRange(handIndex, cutoff, profile.openRaiseProb + positionBonus + limperBonus)) {
             val sizing = openRaiseSize(player, profile, state)
             if (sizing >= player.chips + player.currentBet) {
                 Action.allIn(player.chips)
