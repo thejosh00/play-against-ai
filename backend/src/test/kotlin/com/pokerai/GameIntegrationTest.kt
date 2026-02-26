@@ -109,7 +109,6 @@ class GameIntegrationTest {
                 assertTrue(errors.isEmpty(), "Hand $hand had errors: ${errors.map { it.message }}")
                 assertEquals(1, handResults.size, "Hand $hand should have exactly 1 hand result")
                 assertTrue(handResults[0].winners.isNotEmpty(), "Hand $hand should have at least one winner")
-                assertTrue(handResults[0].allHoleCards.isNotEmpty(), "Hand $hand should reveal hole cards")
 
                 val lastState = stateUpdates.last()
                 assertEquals(GamePhase.HAND_COMPLETE, lastState.phase, "Hand $hand should end in HAND_COMPLETE")

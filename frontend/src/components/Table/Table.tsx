@@ -47,6 +47,7 @@ export function Table({ state }: TableProps) {
             <Seat
               player={player}
               isCurrentPlayer={state.currentPlayerIndex === i}
+              phase={state.phase}
             />
             {player.currentBet > 0 && (
               <div className={`bet-pos bet-pos-${seatPositions[i]?.className.replace('seat-pos-', '') || i}`}>

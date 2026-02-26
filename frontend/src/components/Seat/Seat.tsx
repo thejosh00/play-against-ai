@@ -1,13 +1,14 @@
-import type { PlayerDto } from '../../types/game';
+import type { GamePhase, PlayerDto } from '../../types/game';
 import { Card } from '../Card/Card';
 import './Seat.css';
 
 interface SeatProps {
   player: PlayerDto;
   isCurrentPlayer: boolean;
+  phase: GamePhase;
 }
 
-export function Seat({ player, isCurrentPlayer }: SeatProps) {
+export function Seat({ player, isCurrentPlayer, phase }: SeatProps) {
   const seatClass = [
     'seat',
     player.isFolded ? 'seat-folded' : '',
@@ -35,7 +36,7 @@ export function Seat({ player, isCurrentPlayer }: SeatProps) {
           player.holeCards.map((card, i) => (
             <Card key={i} card={card} />
           ))
-        ) : player.isFolded || player.isSittingOut ? null : (
+        ) : player.isFolded || player.isSittingOut || phase === 'SHOWDOWN' || phase === 'HAND_COMPLETE' ? null : (
           <>
             <Card faceDown />
             <Card faceDown />

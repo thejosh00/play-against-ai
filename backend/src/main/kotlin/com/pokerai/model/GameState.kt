@@ -31,7 +31,8 @@ data class GameState(
     var showAiCards: Boolean = false,
     var showPlayerTypes: Boolean = false,
     val deck: Deck = Deck(),
-    val actionHistory: MutableList<ActionRecord> = mutableListOf()
+    val actionHistory: MutableList<ActionRecord> = mutableListOf(),
+    var showdownRevealedPlayers: Set<Int> = emptySet()
 ) {
     val activePlayers: List<Player> get() = players.filter { !it.isFolded && !it.isSittingOut }
     val playersInHand: List<Player> get() = players.filter { !it.isSittingOut }

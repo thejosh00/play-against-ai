@@ -225,19 +225,30 @@ class GameSession(
         }
         val winnerIndices = winners.map { it.playerIndex }.toSet()
 
+        val isShowdown = s.activePlayers.size >= 2
+
+        // Determine which players' cards are revealed
+        s.showdownRevealedPlayers = if (isShowdown) {
+            val lastAggressor = showdownOrder.firstOrNull()
+            winnerIndices + setOfNotNull(lastAggressor)
+        } else {
+            emptySet()
+        }
+
         // Build hole cards list in showdown order with mucking
-        val allHoleCards = showdownOrder.mapNotNull { idx ->
-            val player = s.players[idx]
-            val holeCards = player.holeCards ?: return@mapNotNull null
-            // Show cards if: player is a winner, player is the last aggressor, or player is human
-            val isWinner = idx in winnerIndices
-            val isLastAggressor = showdownOrder.firstOrNull() == idx
-            val shouldShow = isWinner || isLastAggressor || player.isHuman
-            HoleCardsDto(
-                playerIndex = player.index,
-                cards = holeCards.toList().map { CardDto.from(it) },
-                mucked = !shouldShow
-            )
+        val allHoleCards = if (!isShowdown) {
+            emptyList()
+        } else {
+            showdownOrder.mapNotNull { idx ->
+                val player = s.players[idx]
+                val holeCards = player.holeCards ?: return@mapNotNull null
+                val shouldShow = idx in s.showdownRevealedPlayers || player.isHuman
+                HoleCardsDto(
+                    playerIndex = player.index,
+                    cards = holeCards.toList().map { CardDto.from(it) },
+                    mucked = !shouldShow
+                )
+            }
         }
 
         val summary = winners.joinToString("; ") { w ->

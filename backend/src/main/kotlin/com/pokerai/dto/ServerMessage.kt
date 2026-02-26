@@ -129,7 +129,7 @@ fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null): ServerMes
                 player.isHuman -> true
                 showAiCards -> true
                 phase == GamePhase.SHOWDOWN || phase == GamePhase.HAND_COMPLETE ->
-                    !player.isFolded
+                    player.index in showdownRevealedPlayers
                 else -> false
             }
             PlayerDto(
