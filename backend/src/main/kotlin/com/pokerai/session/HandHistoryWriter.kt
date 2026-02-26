@@ -1,7 +1,6 @@
 package com.pokerai.session
 
-import com.pokerai.analysis.DrawType
-import com.pokerai.analysis.HandAnalysis
+import com.pokerai.analysis.*
 import com.pokerai.model.*
 import java.io.File
 import java.time.LocalDateTime
@@ -19,6 +18,7 @@ object HandHistoryWriter {
         aiReasoning: Map<Int, Pair<String?, String?>>,
         startingChips: Map<Int, Int>,
         handAnalysisByPhase: Map<GamePhase, Map<Int, HandAnalysis>>,
+        boardAnalysisByPhase: Map<GamePhase, BoardAnalysis> = emptyMap(),
         tournamentPlayersRemaining: Int? = null,
         dir: File = File("hand_histories")
     ) {
@@ -70,6 +70,12 @@ object HandHistoryWriter {
             }
             sb.appendLine(header)
 
+            // Board threats for this street
+            val boardAnalysis = boardAnalysisByPhase[phase]
+            if (boardAnalysis != null) {
+                sb.appendLine("  Board: ${formatBoardThreats(boardAnalysis)}")
+            }
+
             // Hand evaluations for this street
             val analyses = handAnalysisByPhase[phase]
             if (analyses != null) {
@@ -114,6 +120,33 @@ object HandHistoryWriter {
         sb.appendLine()
 
         file.writeText(sb.toString())
+    }
+
+    private fun formatBoardThreats(board: BoardAnalysis): String {
+        val flush = when {
+            board.flushCompletedThisStreet -> "flush completed this street"
+            board.flushPossible -> "flush possible"
+            board.flushDrawPossible -> "flush draw possible"
+            else -> "flush not possible"
+        }
+
+        val straight = when {
+            board.straightCompletedThisStreet -> "straight completed this street"
+            board.straightPossible -> "straight possible"
+            board.straightDrawHeavy -> "OESD possible"
+            board.connected -> "gutshot straight draw possible"
+            else -> "straight not possible"
+        }
+
+        val fullHouse = if (board.fullHousePossible) "full house possible" else "full house not possible"
+
+        val pairing = when {
+            board.boardPairedThisStreet -> ", board paired this street"
+            board.paired -> ", board paired"
+            else -> ""
+        }
+
+        return "$flush, $straight, $fullHouse$pairing"
     }
 
     private fun formatDraws(analysis: HandAnalysis): String {

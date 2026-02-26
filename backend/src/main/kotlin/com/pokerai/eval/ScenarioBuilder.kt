@@ -200,6 +200,7 @@ object ScenarioBuilder {
                     lowCard = Rank.TWO,
                     straightPossible = straightPossible,
                     straightDrawHeavy = false,
+                    fullHousePossible = paired,
                     flushCompletedThisStreet = flushCompletedThisStreet,
                     straightCompletedThisStreet = straightCompletedThisStreet,
                     boardPairedThisStreet = false,

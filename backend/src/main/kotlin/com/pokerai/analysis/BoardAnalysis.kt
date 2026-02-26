@@ -30,6 +30,7 @@ data class BoardAnalysis(
 
     val straightPossible: Boolean,
     val straightDrawHeavy: Boolean,
+    val fullHousePossible: Boolean,
 
     val flushCompletedThisStreet: Boolean,
     val straightCompletedThisStreet: Boolean,

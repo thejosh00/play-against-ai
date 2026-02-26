@@ -109,6 +109,7 @@ class NitStrategyTest {
             lowCard = Rank.TWO,
             straightPossible = false,
             straightDrawHeavy = false,
+            fullHousePossible = false,
             flushCompletedThisStreet = flushCompletedThisStreet,
             straightCompletedThisStreet = straightCompletedThisStreet,
             boardPairedThisStreet = boardPairedThisStreet,

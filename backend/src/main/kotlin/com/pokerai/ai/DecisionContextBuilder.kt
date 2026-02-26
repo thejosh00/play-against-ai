@@ -144,6 +144,7 @@ object DecisionContextBuilder {
         lowCard = Rank.TWO,
         straightPossible = false,
         straightDrawHeavy = false,
+        fullHousePossible = false,
         flushCompletedThisStreet = false,
         straightCompletedThisStreet = false,
         boardPairedThisStreet = false,

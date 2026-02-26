@@ -39,6 +39,7 @@ object BoardAnalyzer {
         val highlyConnected = hasThreeInFiveRankSpan(withLowAce.toSet())
         val straightPossible = highlyConnected
         val straightDrawHeavy = checkStraightDrawHeavy(withLowAce.toSet())
+        val fullHousePossible = paired || doublePaired || trips
 
         // Turn/river change detection
         val flushCompletedThisStreet: Boolean
@@ -85,6 +86,7 @@ object BoardAnalyzer {
             connected = connected, highlyConnected = highlyConnected,
             highCard = highCard, lowCard = lowCard,
             straightPossible = straightPossible, straightDrawHeavy = straightDrawHeavy,
+            fullHousePossible = fullHousePossible,
             flushCompletedThisStreet = flushCompletedThisStreet,
             straightCompletedThisStreet = straightCompletedThisStreet,
             boardPairedThisStreet = boardPairedThisStreet,

@@ -1,8 +1,7 @@
 package com.pokerai.session
 
 import com.pokerai.ai.*
-import com.pokerai.analysis.HandAnalysis
-import com.pokerai.analysis.HandStrengthClassifier
+import com.pokerai.analysis.*
 import com.pokerai.dto.*
 import com.pokerai.engine.GameEngine
 import com.pokerai.engine.HandEvaluator
@@ -35,6 +34,7 @@ class GameSession(
     private val aiReasoningByActionIndex = mutableMapOf<Int, Pair<String?, String?>>()
     private var startingChips = emptyMap<Int, Int>()
     private val handAnalysisByPhase = mutableMapOf<GamePhase, Map<Int, HandAnalysis>>()
+    private val boardAnalysisByPhase = mutableMapOf<GamePhase, BoardAnalysis>()
 
     suspend fun handleMessage(text: String) {
         try {
@@ -85,6 +85,7 @@ class GameSession(
         GameEngine.startNewHand(s)
         aiReasoningByActionIndex.clear()
         handAnalysisByPhase.clear()
+        boardAnalysisByPhase.clear()
         startingChips = s.players.associate { it.index to (it.chips + it.currentBet) }
 
         sessionTracker.recordHandStart(s.players)
@@ -103,6 +104,7 @@ class GameSession(
         // Flop
         GameEngine.dealCommunity(s)
         recordHandAnalysis(s)
+        recordBoardAnalysis(s, previousCommunityCount = 0)
         sendState()
 
         if (!GameEngine.allInRunout(s)) {
@@ -116,6 +118,7 @@ class GameSession(
         // Turn
         GameEngine.dealCommunity(s)
         recordHandAnalysis(s)
+        recordBoardAnalysis(s, previousCommunityCount = 3)
         sendState()
 
         if (!GameEngine.allInRunout(s)) {
@@ -129,6 +132,7 @@ class GameSession(
         // River
         GameEngine.dealCommunity(s)
         recordHandAnalysis(s)
+        recordBoardAnalysis(s, previousCommunityCount = 4)
         sendState()
 
         if (!GameEngine.allInRunout(s)) {
@@ -248,7 +252,7 @@ class GameSession(
             val holeCardsMap = s.players
                 .filter { it.holeCards != null }
                 .associate { it.index to it.holeCards!! }
-            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, tournamentState?.remainingPlayers)
+            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, boardAnalysisByPhase, tournamentState?.remainingPlayers)
         }
 
         // Post-hand processing depends on game mode
@@ -387,6 +391,12 @@ class GameSession(
                 "${cfg.buyin.label} Tournament - ${ts.totalPlayers} players"
             }
             null -> null
+        }
+    }
+
+    private fun recordBoardAnalysis(s: GameState, previousCommunityCount: Int) {
+        if (s.communityCards.size >= 3) {
+            boardAnalysisByPhase[s.phase] = BoardAnalyzer.analyze(s.communityCards, previousCommunityCount)
         }
     }
 

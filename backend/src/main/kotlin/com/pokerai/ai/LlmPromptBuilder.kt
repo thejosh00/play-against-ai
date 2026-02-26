@@ -116,7 +116,7 @@ object LlmPromptBuilder {
             - Community cards: $community
             - Street: ${ctx.street.name}
             - Board texture: ${ctx.board.description}
-
+            ${buildBoardThreats(ctx)}
             POT & SIZING:
             - Pot size: ${ctx.potSize}
             - Current bet to call: ${ctx.betToCall}
@@ -145,6 +145,35 @@ object LlmPromptBuilder {
 
             What is your action?
         """.trimIndent()
+    }
+
+    private fun buildBoardThreats(ctx: DecisionContext): String {
+        val board = ctx.board
+
+        val flush = when {
+            board.flushCompletedThisStreet -> "Flush completed this street"
+            board.flushPossible -> "Flush possible"
+            board.flushDrawPossible -> "Flush draw possible"
+            else -> "Flush not possible"
+        }
+
+        val straight = when {
+            board.straightCompletedThisStreet -> "Straight completed this street"
+            board.straightPossible -> "Straight possible"
+            board.straightDrawHeavy -> "OESD possible"
+            board.connected -> "Gutshot straight draw possible"
+            else -> "Straight not possible"
+        }
+
+        val fullHouse = if (board.fullHousePossible) "Full house possible" else "Full house not possible"
+
+        val pairing = when {
+            board.boardPairedThisStreet -> ", Board paired this street"
+            board.paired -> ", Board paired"
+            else -> ""
+        }
+
+        return "- Board threats: $flush, $straight, $fullHouse$pairing\n"
     }
 
     private fun buildSessionSection(ctx: DecisionContext): String {
