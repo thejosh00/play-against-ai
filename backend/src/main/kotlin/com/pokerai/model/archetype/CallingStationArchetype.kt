@@ -12,7 +12,6 @@ import com.pokerai.model.Position
 data object CallingStationArchetype : PlayerArchetype() {
     override val displayName = "Calling Station"
     override val weight = 35
-    override val aiNames = listOf("Bobby", "Earl", "Doris", "Gus")
 
     override fun createProfile(): PlayerProfile = PlayerProfile(
         archetype = this,

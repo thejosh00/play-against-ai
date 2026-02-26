@@ -11,7 +11,6 @@ import com.pokerai.model.Position
 data object SharkArchetype : PlayerArchetype() {
     override val displayName = "Shark"
     override val weight = 10
-    override val aiNames = listOf("Sophia", "Alex", "Ivy", "Nolan")
 
     override fun createProfile(): PlayerProfile = PlayerProfile(
         archetype = this,

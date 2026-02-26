@@ -12,7 +12,6 @@ import com.pokerai.model.Position
 data object NitArchetype : PlayerArchetype() {
     override val displayName = "Nit"
     override val weight = 20
-    override val aiNames = listOf("Gerald", "Edna", "Herb", "Mildred")
 
     override fun createProfile(): PlayerProfile = PlayerProfile(
         archetype = this,

@@ -11,7 +11,6 @@ import kotlin.random.Random
 sealed class PlayerArchetype {
     abstract val displayName: String
     abstract val weight: Int
-    abstract val aiNames: List<String>
 
     abstract fun createProfile(): PlayerProfile
     abstract fun getOpenCutoff(position: Position): Int
@@ -25,6 +24,14 @@ sealed class PlayerArchetype {
     companion object {
         val all: List<PlayerArchetype> = listOf(
             TagArchetype, LagArchetype, CallingStationArchetype, NitArchetype, SharkArchetype
+        )
+
+        private val AI_NAMES = listOf(
+            "Aiden", "Alex", "Blaze", "Bobby", "Carmen", "Dash", "Doris", "Earl",
+            "Edna", "Elena", "Felix", "Gerald", "Gus", "Herb", "Ivy", "Jake",
+            "Kai", "Leo", "Luna", "Marcus", "Mia", "Mildred", "Nadia", "Nolan",
+            "Omar", "Penny", "Ravi", "Ricky", "Rosa", "Sadie", "Sophia", "Tara",
+            "Vic", "Victor", "Wes", "Yuki", "Zara", "Zeke"
         )
 
         private val DIFFICULTY_WEIGHTS: Map<Difficulty, Map<PlayerArchetype, Int>> = mapOf(
@@ -73,8 +80,7 @@ sealed class PlayerArchetype {
                     }
                     picked
                 }
-                val name = selected.aiNames.firstOrNull { it !in usedNames }
-                    ?: all.flatMap { it.aiNames }.first { it !in usedNames }
+                val name = AI_NAMES.filter { it !in usedNames }.random()
                 usedNames.add(name)
                 selected.createProfile() to name
             }

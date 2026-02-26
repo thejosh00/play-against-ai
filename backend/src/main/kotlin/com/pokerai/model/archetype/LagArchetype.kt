@@ -12,7 +12,6 @@ import com.pokerai.model.Position
 data object LagArchetype : PlayerArchetype() {
     override val displayName = "Loose-Aggressive"
     override val weight = 15
-    override val aiNames = listOf("Luna", "Blaze", "Ricky", "Dash")
 
     override fun createProfile(): PlayerProfile = PlayerProfile(
         archetype = this,
