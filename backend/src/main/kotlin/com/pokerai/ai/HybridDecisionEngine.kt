@@ -8,7 +8,7 @@ class HybridDecisionEngine(
     private val sessionTracker: SessionTracker? = null,
     private val opponentModeler: OpponentModeler? = null
 ) {
-    suspend fun decide(player: Player, state: GameState): Action {
+    suspend fun decide(player: Player, state: GameState): AiDecision {
         val profile = player.profile
             ?: return llmClient.getDecision(player, state)
 
@@ -23,7 +23,7 @@ class HybridDecisionEngine(
         val decision = strategy.decide(ctx)
 
         if (decision.confidence >= confidenceThreshold) {
-            return decision.action
+            return AiDecision(decision.action, decision.reasoning, "coded")
         }
 
         return llmClient.getEnrichedDecision(player, state, ctx, decision)

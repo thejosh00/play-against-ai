@@ -24,9 +24,9 @@ class HybridDecisionEngineTest {
         var lastCodedSuggestion: ActionDecision? = null
             private set
 
-        override suspend fun getDecision(player: Player, state: GameState): Action {
+        override suspend fun getDecision(player: Player, state: GameState): AiDecision {
             getDecisionCalled = true
-            return fixedAction
+            return AiDecision(fixedAction, null, "test")
         }
 
         override suspend fun isAvailable(): Boolean = true
@@ -36,11 +36,11 @@ class HybridDecisionEngineTest {
             state: GameState,
             ctx: DecisionContext,
             codedSuggestion: ActionDecision
-        ): Action {
+        ): AiDecision {
             getEnrichedDecisionCalled = true
             lastCtx = ctx
             lastCodedSuggestion = codedSuggestion
-            return fixedAction
+            return AiDecision(fixedAction, null, "test")
         }
     }
 
@@ -176,8 +176,8 @@ class HybridDecisionEngineTest {
         assertFalse(fakeLlm.getEnrichedDecisionCalled, "LLM getEnrichedDecision should not be called")
         // Monster facing bet should call or raise (not fold)
         assertTrue(
-            result.type == ActionType.CALL || result.type == ActionType.RAISE,
-            "Should call or raise with a set, got ${result.type}"
+            result.action.type == ActionType.CALL || result.action.type == ActionType.RAISE,
+            "Should call or raise with a set, got ${result.action.type}"
         )
     }
 
@@ -212,7 +212,7 @@ class HybridDecisionEngineTest {
 
         assertFalse(fakeLlm.getDecisionCalled)
         assertFalse(fakeLlm.getEnrichedDecisionCalled)
-        assertEquals(ActionType.FOLD, result.type)
+        assertEquals(ActionType.FOLD, result.action.type)
     }
 
     // ── No coded strategy → LLM called directly ─────────────
@@ -273,7 +273,7 @@ class HybridDecisionEngineTest {
         val result = engine.decide(aiPlayer, state)
 
         assertTrue(fakeLlm.getDecisionCalled, "LLM should be called when player has no profile")
-        assertEquals(ActionType.CHECK, result.type)
+        assertEquals(ActionType.CHECK, result.action.type)
     }
 
     // ── Low-confidence coded decision → LLM fallback ────────
@@ -310,7 +310,7 @@ class HybridDecisionEngineTest {
         assertTrue(fakeLlm.getEnrichedDecisionCalled, "Enriched decision should be called for low confidence")
         assertNotNull(fakeLlm.lastCtx, "Context should be passed to LLM")
         assertNotNull(fakeLlm.lastCodedSuggestion, "Coded suggestion should be passed to LLM")
-        assertEquals(ActionType.CALL, result.type)
+        assertEquals(ActionType.CALL, result.action.type)
     }
 
     // ── Confidence threshold boundary ────────────────────────
@@ -445,7 +445,7 @@ class HybridDecisionEngineTest {
 
         // Nit with nothing facing a bet should fold (coded strategy, high confidence)
         // sanitizeAction should leave the fold as-is since there IS a bet
-        assertEquals(ActionType.FOLD, result.type)
+        assertEquals(ActionType.FOLD, result.action.type)
         assertFalse(fakeLlm.getDecisionCalled, "Coded strategy should handle this without LLM")
     }
 
@@ -510,7 +510,7 @@ class HybridDecisionEngineTest {
         val result = service.decide(aiPlayer, state)
 
         // If the nit strategy returns CHECK, sanitize should leave it as CHECK
-        assertEquals(ActionType.CHECK, result.type)
+        assertEquals(ActionType.CHECK, result.action.type)
     }
 
     @Test
@@ -544,8 +544,8 @@ class HybridDecisionEngineTest {
 
         // Short-stacked player should end up all-in or calling (sanitize handles this)
         assertTrue(
-            result.type == ActionType.ALL_IN || result.type == ActionType.CALL,
-            "Short-stack should go all-in or call, got ${result.type}"
+            result.action.type == ActionType.ALL_IN || result.action.type == ActionType.CALL,
+            "Short-stack should go all-in or call, got ${result.action.type}"
         )
     }
 

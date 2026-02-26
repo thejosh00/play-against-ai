@@ -1,5 +1,6 @@
 package com.pokerai
 
+import com.pokerai.ai.AiDecision
 import com.pokerai.ai.AiDecisionService
 import com.pokerai.ai.DecisionContext
 import com.pokerai.ai.LlmClient
@@ -31,13 +32,14 @@ class GameIntegrationTest {
 
     /** LlmClient that always calls or checks — used for post-flop AI decisions. */
     private class AlwaysCallLlmClient : LlmClient {
-        override suspend fun getDecision(player: Player, state: GameState): Action {
+        override suspend fun getDecision(player: Player, state: GameState): AiDecision {
             val callAmount = state.currentBetLevel - player.currentBet
-            return if (callAmount > 0) {
+            val action = if (callAmount > 0) {
                 Action.call(minOf(callAmount, player.chips))
             } else {
                 Action.check()
             }
+            return AiDecision(action, null, "test")
         }
 
         override suspend fun getEnrichedDecision(
@@ -45,7 +47,7 @@ class GameIntegrationTest {
             state: GameState,
             ctx: DecisionContext,
             codedSuggestion: ActionDecision
-        ): Action = getDecision(player, state)
+        ): AiDecision = getDecision(player, state)
 
         override suspend fun isAvailable(): Boolean = true
     }
@@ -66,7 +68,8 @@ class GameIntegrationTest {
                 val session = GameSession(
                     wsSession = this,
                     aiService = aiService,
-                    aiThinkingDelayMs = 0L..0L
+                    aiThinkingDelayMs = 0L..0L,
+                    handHistoryEnabled = false
                 )
                 for (frame in incoming) {
                     when (frame) {

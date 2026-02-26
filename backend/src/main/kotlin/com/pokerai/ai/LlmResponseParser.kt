@@ -21,6 +21,12 @@ object LlmResponseParser {
         return toAction(response, player, state)
     }
 
+    fun parseWithReasoning(responseText: String, player: Player, state: GameState): Pair<Action, String?> {
+        val cleaned = extractJson(responseText)
+        val response = appJson.decodeFromString<LlmResponse>(cleaned)
+        return Pair(toAction(response, player, state), response.reasoning)
+    }
+
     private fun extractJson(text: String): String {
         // Try to find JSON object in the response
         val start = text.indexOf('{')

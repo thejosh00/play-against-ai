@@ -30,7 +30,7 @@ class PreFlopStrategy(private val random: Random = Random) {
         const val FUZZ_BOUND = 10
     }
 
-    fun decide(player: Player, state: GameState, tournamentState: TournamentState? = null, config: GameConfig? = null): Action {
+    fun decide(player: Player, state: GameState, tournamentState: TournamentState? = null, config: GameConfig? = null): AiDecision {
         val holeCards = player.holeCards ?: error("AI player ${player.name} has no hole cards")
         val profile = player.profile ?: error("AI player ${player.name} has no profile")
         val archetype = profile.archetype
@@ -53,10 +53,13 @@ class PreFlopStrategy(private val random: Random = Random) {
         val handIndex = if (isHeadsUp) HandRankings.huIndexOf(hand) else HandRankings.indexOf(hand)
         val inRange = handIndex < cutoff
 
+        fun reasoning(detail: String) = "$hand, ${scenario.name.lowercase()}, cutoff=$cutoff, ${player.position.label}, $detail"
+
         // Short-stack push/fold: ≤10 BBs means shove or fold
         if (effectiveBBs <= 10) {
             val fuzzIn = !inRange && handIndex < cutoff + FUZZ_BOUND && random.nextDouble() < profile.rangeFuzzProb
-            return if (inRange || fuzzIn) Action.allIn(player.chips) else Action.fold()
+            val action = if (inRange || fuzzIn) Action.allIn(player.chips) else Action.fold()
+            return AiDecision(action, reasoning("push/fold ${effectiveBBs.toInt()}bb"), "coded")
         }
 
         // Range fuzz: occasionally play slightly outside range or fold inside range
@@ -67,25 +70,27 @@ class PreFlopStrategy(private val random: Random = Random) {
         }
 
         if (!fuzzedInRange) {
-            return Action.fold()
+            return AiDecision(Action.fold(), reasoning("out of range"), "coded")
         }
 
         // Short-stack 10-20 BBs: 3-bets become shoves
         if (effectiveBBs <= 20 && scenario == Scenario.FACING_RAISE) {
-            return if (isTopOfRange(handIndex, cutoff, profile.threeBetProb)) {
+            val action = if (isTopOfRange(handIndex, cutoff, profile.threeBetProb)) {
                 Action.allIn(player.chips)
             } else {
                 val callAmount = state.currentBetLevel - player.currentBet
                 if (callAmount >= player.chips) Action.allIn(player.chips)
                 else Action.call(callAmount)
             }
+            return AiDecision(action, reasoning("short-stack ${effectiveBBs.toInt()}bb"), "coded")
         }
 
-        return when (scenario) {
+        val action = when (scenario) {
             Scenario.OPEN -> decideOpen(player, state, profile, handIndex, cutoff)
             Scenario.FACING_RAISE -> decideFacingRaise(player, state, profile, handIndex, cutoff)
             Scenario.FACING_3BET -> decideFacing3Bet(player, state, profile, handIndex, cutoff)
         }
+        return AiDecision(action, reasoning("rank=$handIndex"), "coded")
     }
 
     internal fun computeRangeAdjustment(player: Player, state: GameState, scenario: Scenario): Int {

@@ -25,11 +25,11 @@ data class Action(
         fun allIn(amount: Int) = Action(ActionType.ALL_IN, amount)
     }
 
-    fun describe(): String = when (type) {
+    fun describe(isBet: Boolean = false): String = when (type) {
         ActionType.FOLD -> "Fold"
         ActionType.CHECK -> "Check"
         ActionType.CALL -> "Call \$$amount"
-        ActionType.RAISE -> "Raise to \$$amount"
+        ActionType.RAISE -> if (isBet) "Bet \$$amount" else "Raise to \$$amount"
         ActionType.ALL_IN -> "All-In \$$amount"
     }
 }

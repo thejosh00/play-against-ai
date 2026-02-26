@@ -2,6 +2,8 @@ package com.pokerai.ai
 
 import com.pokerai.model.*
 
+data class AiDecision(val action: Action, val reasoning: String?, val source: String)
+
 class AiDecisionService(
     private val preFlopStrategy: PreFlopStrategy = PreFlopStrategy(),
     private val llmClient: LlmClient,
@@ -11,14 +13,14 @@ class AiDecisionService(
         llmClient, sessionTracker = sessionTracker, opponentModeler = opponentModeler
     )
 ) {
-    suspend fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): Action {
-        val action = if (state.phase == GamePhase.PRE_FLOP) {
+    suspend fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): AiDecision {
+        val decision = if (state.phase == GamePhase.PRE_FLOP) {
             preFlopStrategy.decide(player, state, tournamentState, config)
         } else {
             hybridEngine.decide(player, state)
         }
 
-        return sanitizeAction(action, player, state)
+        return AiDecision(sanitizeAction(decision.action, player, state), decision.reasoning, decision.source)
     }
 
     private fun sanitizeAction(action: Action, player: Player, state: GameState): Action {

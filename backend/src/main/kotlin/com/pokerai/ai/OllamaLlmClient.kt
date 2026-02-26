@@ -2,6 +2,7 @@ package com.pokerai.ai
 
 import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.Action
+import com.pokerai.model.ActionType
 import com.pokerai.model.GameState
 import com.pokerai.model.Player
 import io.ktor.client.*
@@ -62,7 +63,7 @@ class OllamaLlmClient(
         state: GameState,
         ctx: DecisionContext,
         codedSuggestion: ActionDecision
-    ): Action {
+    ): AiDecision {
         val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
         val userPrompt = LlmPromptBuilder.buildEnrichedUserPrompt(player, state, ctx, codedSuggestion)
 
@@ -89,14 +90,15 @@ class OllamaLlmClient(
 
             logger.debug("LLM enriched response for ${player.name}: $content")
 
-            LlmResponseParser.parse(content, player, state)
+            val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
+            AiDecision(action, reasoning, "llm")
         } catch (e: Exception) {
             logger.warn("Enriched LLM call failed for ${player.name}: ${e.message}, falling back to coded suggestion")
-            codedSuggestion.action
+            AiDecision(codedSuggestion.action, null, "llm-fallback")
         }
     }
 
-    override suspend fun getDecision(player: Player, state: GameState): Action {
+    override suspend fun getDecision(player: Player, state: GameState): AiDecision {
         val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
         val userPrompt = LlmPromptBuilder.buildUserPrompt(player, state)
 
@@ -123,14 +125,15 @@ class OllamaLlmClient(
 
             logger.debug("LLM response for ${player.name}: $content")
 
-            LlmResponseParser.parse(content, player, state)
+            val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
+            AiDecision(action, reasoning, "llm")
         } catch (e: Exception) {
             logger.warn("LLM call failed for ${player.name}: ${e.message}, retrying with simple prompt")
             retrySimple(player, state)
         }
     }
 
-    private suspend fun retrySimple(player: Player, state: GameState): Action {
+    private suspend fun retrySimple(player: Player, state: GameState): AiDecision {
         val callAmount = state.currentBetLevel - player.currentBet
         val prompt = if (callAmount > 0) {
             "Poker: You have ${player.holeCards?.notation ?: "??"}. Board: ${state.communityCards.joinToString(" ") { it.notation }}. " +
@@ -142,7 +145,7 @@ class OllamaLlmClient(
             "Reply with ONLY one word: check or raise"
         }
 
-        return try {
+        val action = try {
             val request = OllamaChatRequest(
                 model = model,
                 messages = listOf(OllamaMessage("user", prompt)),
@@ -171,6 +174,7 @@ class OllamaLlmClient(
             // Ultimate fallback
             if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
         }
+        return AiDecision(action, null, "llm-fallback")
     }
 
     override suspend fun isAvailable(): Boolean {

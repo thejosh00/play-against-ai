@@ -45,15 +45,15 @@ data object NitArchetype : PlayerArchetype() {
             null -> {}
         }
         when (context.difficulty) {
-            Difficulty.LOW -> adj -= 1
-            Difficulty.HIGH -> adj += 1
+            Difficulty.LOW -> {}
             Difficulty.MEDIUM -> {}
+            Difficulty.HIGH -> adj += 1
         }
         return adj
     }
 
     override fun getOpenCutoff(position: Position): Int = when (position) {
-        Position.UTG, Position.UTG1 -> 7
+        Position.UTG, Position.UTG1 -> 8
         Position.LJ, Position.MP -> 11
         Position.HJ, Position.CO -> 15
         Position.BTN -> 19

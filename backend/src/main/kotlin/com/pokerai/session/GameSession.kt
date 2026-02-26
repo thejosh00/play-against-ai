@@ -1,8 +1,11 @@
 package com.pokerai.session
 
 import com.pokerai.ai.*
+import com.pokerai.analysis.HandAnalysis
+import com.pokerai.analysis.HandStrengthClassifier
 import com.pokerai.dto.*
 import com.pokerai.engine.GameEngine
+import com.pokerai.engine.HandEvaluator
 import com.pokerai.engine.PotManager
 import com.pokerai.model.*
 import com.pokerai.model.archetype.PlayerArchetype
@@ -22,12 +25,16 @@ class GameSession(
         sessionTracker = sessionTracker,
         opponentModeler = opponentModeler
     ),
-    private val aiThinkingDelayMs: LongRange = 1000L..3000L
+    private val aiThinkingDelayMs: LongRange = 1000L..3000L,
+    private val handHistoryEnabled: Boolean = true
 ) {
     private var state: GameState? = null
     private var config: GameConfig? = null
     private var tournamentState: TournamentState? = null
     private val playerActionChannel = Channel<ClientMessage.PlayerAction>(Channel.RENDEZVOUS)
+    private val aiReasoningByActionIndex = mutableMapOf<Int, Pair<String?, String?>>()
+    private var startingChips = emptyMap<Int, Int>()
+    private val handAnalysisByPhase = mutableMapOf<GamePhase, Map<Int, HandAnalysis>>()
 
     suspend fun handleMessage(text: String) {
         try {
@@ -76,6 +83,9 @@ class GameSession(
 
         GameEngine.advanceDealer(s)
         GameEngine.startNewHand(s)
+        aiReasoningByActionIndex.clear()
+        handAnalysisByPhase.clear()
+        startingChips = s.players.associate { it.index to (it.chips + it.currentBet) }
 
         sessionTracker.recordHandStart(s.players)
         opponentModeler.recordNewHand(s.players)
@@ -92,6 +102,7 @@ class GameSession(
 
         // Flop
         GameEngine.dealCommunity(s)
+        recordHandAnalysis(s)
         sendState()
 
         if (!GameEngine.allInRunout(s)) {
@@ -104,6 +115,7 @@ class GameSession(
 
         // Turn
         GameEngine.dealCommunity(s)
+        recordHandAnalysis(s)
         sendState()
 
         if (!GameEngine.allInRunout(s)) {
@@ -116,6 +128,7 @@ class GameSession(
 
         // River
         GameEngine.dealCommunity(s)
+        recordHandAnalysis(s)
         sendState()
 
         if (!GameEngine.allInRunout(s)) {
@@ -145,20 +158,23 @@ class GameSession(
                 sendState()
                 val playerAction = playerActionChannel.receive()
                 val action = playerActionToAction(playerAction, player, s)
+                val isBet = action.type == ActionType.RAISE && s.currentBetLevel == 0 && s.phase != GamePhase.PRE_FLOP
                 opponentModeler.recordAction(nextToAct, action, s.phase)
                 GameEngine.applyAction(s, nextToAct, action)
-                sendActionPerformed(player, action)
+                sendActionPerformed(player, action, isBet)
             } else {
                 sendState()
                 val thinkingDelay = aiThinkingDelayMs.random()
                 val start = System.currentTimeMillis()
-                val action = aiService.decide(player, s, config, tournamentState)
+                val decision = aiService.decide(player, s, config, tournamentState)
                 val elapsed = System.currentTimeMillis() - start
                 val remaining = thinkingDelay - elapsed
                 if (remaining > 0) delay(remaining)
-                opponentModeler.recordAction(nextToAct, action, s.phase)
-                GameEngine.applyAction(s, nextToAct, action)
-                sendActionPerformed(player, action)
+                val isBet = decision.action.type == ActionType.RAISE && s.currentBetLevel == 0 && s.phase != GamePhase.PRE_FLOP
+                opponentModeler.recordAction(nextToAct, decision.action, s.phase)
+                GameEngine.applyAction(s, nextToAct, decision.action)
+                aiReasoningByActionIndex[s.actionHistory.size - 1] = Pair(decision.reasoning, decision.source)
+                sendActionPerformed(player, decision.action, isBet)
             }
 
             if (GameEngine.isHandComplete(s)) break
@@ -226,6 +242,14 @@ class GameSession(
         }
 
         sendMessage(ServerMessage.HandResult(winners, allHoleCards, summary))
+
+        // Write hand history
+        if (handHistoryEnabled) {
+            val holeCardsMap = s.players
+                .filter { it.holeCards != null }
+                .associate { it.index to it.holeCards!! }
+            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, tournamentState?.remainingPlayers)
+        }
 
         // Post-hand processing depends on game mode
         when (cfg) {
@@ -366,18 +390,25 @@ class GameSession(
         }
     }
 
+    private fun recordHandAnalysis(s: GameState) {
+        val analyses = s.activePlayers
+            .filter { it.holeCards != null }
+            .associate { it.index to HandStrengthClassifier.analyze(it.holeCards!!, s.communityCards) }
+        handAnalysisByPhase[s.phase] = analyses
+    }
+
     private suspend fun sendState() {
         val s = state ?: return
         sendMessage(s.toUpdate(gameLabel = buildGameLabel()))
     }
 
-    private suspend fun sendActionPerformed(player: Player, action: Action) {
+    private suspend fun sendActionPerformed(player: Player, action: Action, isBet: Boolean = false) {
         val s = state ?: return
         sendMessage(
             ServerMessage.ActionPerformed(
                 playerIndex = player.index,
                 playerName = player.name,
-                action = action.describe(),
+                action = action.describe(isBet),
                 phase = s.phase
             )
         )
