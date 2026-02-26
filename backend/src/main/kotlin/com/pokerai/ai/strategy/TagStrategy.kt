@@ -116,6 +116,11 @@ class TagStrategy : ArchetypeStrategy {
             instinct += 5
         }
 
+        // Follow through on prior-street aggression when not facing a bet
+        if (ctx.wasAggressorThisHand && !ctx.facingBet) {
+            instinct += 20
+        }
+
         return instinct.coerceIn(1, 100)
     }
 

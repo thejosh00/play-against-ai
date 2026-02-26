@@ -91,9 +91,14 @@ class NitStrategy : ArchetypeStrategy {
                 }
         }
 
+        // Follow through on prior-street aggression when not facing a bet
+        if (ctx.wasAggressorThisHand && !ctx.facingBet) {
+            modifier += 15
+        }
+
         // Do not allow stacked modifiers to completely change personality
-        // A nit can easily clam up (-25), but even on full tilt, they won't go completely crazy (+15 max).
-        return (ctx.instinct + modifier.coerceIn(-25, 15)).coerceIn(1, 100)
+        // A nit can easily clam up (-25), but even on full tilt, they won't go completely crazy (+30 max).
+        return (ctx.instinct + modifier.coerceIn(-25, 30)).coerceIn(1, 100)
     }
 
     private fun upgradeTier(tier: HandStrengthTier): HandStrengthTier = when (tier) {

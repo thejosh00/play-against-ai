@@ -83,6 +83,11 @@ class CallingStationStrategy : ArchetypeStrategy {
                 }
         }
 
+        // Follow through on prior-street aggression when not facing a bet
+        if (ctx.wasAggressorThisHand && !ctx.facingBet) {
+            instinct += 10
+        }
+
         return instinct.coerceIn(1, 100)
     }
 

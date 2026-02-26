@@ -78,6 +78,7 @@ object DecisionContextBuilder {
         }
 
         val closesAction = computeClosesAction(player, state)
+        val wasAggressorThisHand = computeWasAggressorThisHand(player.index, actions, state.phase)
 
         return DecisionContext(
             hand = hand,
@@ -105,6 +106,7 @@ object DecisionContextBuilder {
             numBetsThisStreet = actions.numBetsCurrentStreet,
             potType = actions.potType,
             closesAction = closesAction,
+            wasAggressorThisHand = wasAggressorThisHand,
             instinct = instinctOverride ?: Random.nextInt(1, 101),
             profile = profile,
             sessionStats = sessionStats,
@@ -169,6 +171,21 @@ object DecisionContextBuilder {
             (it.index - state.dealerIndex - 1 + tableSize) % tableSize
         }
         return ordered.last().index == player.index
+    }
+
+    private fun computeWasAggressorThisHand(
+        playerIndex: Int, actions: ActionAnalysis, currentPhase: GamePhase
+    ): Boolean {
+        fun wasAggressive(streetActions: List<StreetAction>) =
+            streetActions.any { it.playerIndex == playerIndex && it.isAggressive }
+        return when (currentPhase) {
+            GamePhase.PRE_FLOP -> false
+            GamePhase.FLOP -> wasAggressive(actions.preflopActions)
+            GamePhase.TURN -> wasAggressive(actions.preflopActions) || wasAggressive(actions.flopActions)
+            GamePhase.RIVER -> wasAggressive(actions.preflopActions) || wasAggressive(actions.flopActions)
+                || wasAggressive(actions.turnActions)
+            else -> false
+        }
     }
 
     private fun determineFacingRaise(
