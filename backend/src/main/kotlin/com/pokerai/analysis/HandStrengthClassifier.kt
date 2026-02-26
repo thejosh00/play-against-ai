@@ -73,17 +73,23 @@ object HandStrengthClassifier {
         communityCards: List<Card>
     ): HandStrengthTier {
         val boardRankCounts = communityCards.groupBy { it.rank.value }
-        val holeRanks = holeCards.toList().map { it.rank.value }
-        val twoPairRanks = evaluation.kickers.take(2)
+        val holeRanks = holeCards.toList().map { it.rank.value }.toSet()
+        val twoPairRanks = evaluation.kickers.take(2).toSet()
+
+        val boardPairs = boardRankCounts.filter { it.value.size >= 2 }.keys
 
         // If both pairs are on the board, the player doesn't really have two pair
-        val boardPairs = boardRankCounts.filter { it.value.size >= 2 }.keys
-        if (boardPairs.containsAll(twoPairRanks.toSet())) {
-            // Player's kicker matters but this is effectively high card on a double-paired board
+        if (boardPairs.containsAll(twoPairRanks)) {
             return if (holeRanks.max() >= Rank.ACE.value) HandStrengthTier.MEDIUM
             else HandStrengthTier.WEAK
         }
 
+        // If one pair is on the board and the player matches the other, it's vulnerable
+        if (boardPairs.any { it in twoPairRanks }) {
+            return HandStrengthTier.MEDIUM
+        }
+
+        // Both hole cards contribute to the two pair
         return HandStrengthTier.MONSTER
     }
 
