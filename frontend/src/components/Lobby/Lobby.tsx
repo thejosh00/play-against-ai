@@ -28,11 +28,11 @@ const STARTING_BB_OPTIONS = [10, 25, 50, 100, 200] as const;
 export function Lobby({ onStartGame, connected }: LobbyProps) {
   const [gameType, setGameType] = useState<GameType>(null);
   const [cashStakes, setCashStakes] = useState<CashStakes>('TWO_FIVE');
-  const [tournamentBuyin, setTournamentBuyin] = useState<TournamentBuyin>('FIVE_HUNDRED');
+  const [tournamentBuyin, setTournamentBuyin] = useState<TournamentBuyin>('HUNDRED');
   const [rakeEnabled, setRakeEnabled] = useState(false);
-  const [antesEnabled, setAntesEnabled] = useState(false);
+  const [antesEnabled, setAntesEnabled] = useState(true);
   const [playerCount, setPlayerCount] = useState<number>(45);
-  const [tableSize, setTableSize] = useState<number>(6);
+  const [tableSize, setTableSize] = useState<number>(9);
   const [startingBBs, setStartingBBs] = useState<number>(200);
 
   const handleStart = () => {
