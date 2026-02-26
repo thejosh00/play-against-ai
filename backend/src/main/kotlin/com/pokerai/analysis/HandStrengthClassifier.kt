@@ -36,14 +36,48 @@ object HandStrengthClassifier {
         holeCards: HoleCards,
         communityCards: List<Card>
     ): HandStrengthTier {
+        // 4-flush on board: anything that doesn't beat a flush is weak
+        val fourFlushSuit = communityCards.groupBy { it.suit }.entries.find { it.value.size >= 4 }?.key
+        if (fourFlushSuit != null && evaluation.rank < HandRank.FLUSH) {
+            return HandStrengthTier.WEAK
+        }
+
         return when (evaluation.rank) {
             HandRank.ROYAL_FLUSH, HandRank.STRAIGHT_FLUSH, HandRank.FOUR_OF_A_KIND,
-            HandRank.FULL_HOUSE, HandRank.FLUSH, HandRank.STRAIGHT -> HandStrengthTier.MONSTER
+            HandRank.FULL_HOUSE -> HandStrengthTier.MONSTER
+
+            HandRank.FLUSH -> classifyFlush(holeCards, fourFlushSuit)
+
+            HandRank.STRAIGHT -> HandStrengthTier.MONSTER
 
             HandRank.THREE_OF_A_KIND -> classifyThreeOfAKind(evaluation, holeCards, communityCards)
             HandRank.TWO_PAIR -> classifyTwoPair(evaluation, holeCards, communityCards)
             HandRank.ONE_PAIR -> classifyOnePair(evaluation, holeCards, communityCards)
             HandRank.HIGH_CARD -> HandStrengthTier.NOTHING
+        }
+    }
+
+    private fun classifyFlush(
+        holeCards: HoleCards,
+        fourFlushSuit: Suit?
+    ): HandStrengthTier {
+        // No 4-flush on board — player made a flush using 2+ hole cards, always strong
+        if (fourFlushSuit == null) return HandStrengthTier.MONSTER
+
+        // 4-flush on board: strength depends on the player's highest hole card of that suit
+        val holeFlushCards = holeCards.toList().filter { it.suit == fourFlushSuit }
+
+        if (holeFlushCards.isEmpty()) {
+            // Board-only flush — anyone with a single suited card beats this
+            return HandStrengthTier.WEAK
+        }
+
+        val highestHoleFlush = holeFlushCards.maxOf { it.rank.value }
+        return when {
+            highestHoleFlush >= Rank.ACE.value -> HandStrengthTier.MONSTER   // Nut flush
+            highestHoleFlush >= Rank.KING.value -> HandStrengthTier.STRONG   // Second-nut flush
+            highestHoleFlush >= Rank.TEN.value -> HandStrengthTier.MEDIUM    // Decent flush
+            else -> HandStrengthTier.WEAK                                     // Low flush, easily dominated
         }
     }
 
