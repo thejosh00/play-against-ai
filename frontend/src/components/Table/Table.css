@@ -11,6 +11,8 @@
   position: relative;
   width: 700px;
   height: 420px;
+  margin-top: 50px;
+  margin-bottom: 60px;
   background: radial-gradient(ellipse, #1a6b3c, #0d4f2b 60%, #0a3d22);
   border-radius: 200px;
   border: 8px solid #5c3a1e;
@@ -72,22 +74,69 @@
   right: -20px;
 }
 
-/* Top-left (9-max seat 3) */
-.seat-pos-6 {
-  top: -20px;
-  left: 80px;
+/* ===== 9-player seat positions (evenly spaced ellipse) ===== */
+
+/* Seat 0: bottom center (user) */
+.seat-pos-9-0 {
+  left: 350px;
+  top: 420px;
+  transform: translate(-50%, -50%);
 }
 
-/* Top center-right (9-max seat 5) */
-.seat-pos-7 {
-  top: -20px;
-  right: 80px;
+/* Seat 1: bottom-left */
+.seat-pos-9-1 {
+  left: 112px;
+  top: 398px;
+  transform: translate(-50%, -50%);
 }
 
-/* Bottom-right (9-max seat 8) */
-.seat-pos-8 {
-  bottom: -20px;
-  right: 80px;
+/* Seat 2: left */
+.seat-pos-9-2 {
+  left: -14px;
+  top: 253px;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 3: upper-left */
+.seat-pos-9-3 {
+  left: 30px;
+  top: 87px;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 4: top-left */
+.seat-pos-9-4 {
+  left: 223px;
+  top: -20px;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 5: top-right */
+.seat-pos-9-5 {
+  left: 477px;
+  top: -20px;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 6: upper-right */
+.seat-pos-9-6 {
+  left: 670px;
+  top: 87px;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 7: right */
+.seat-pos-9-7 {
+  left: 714px;
+  top: 253px;
+  transform: translate(-50%, -50%);
+}
+
+/* Seat 8: bottom-right */
+.seat-pos-9-8 {
+  left: 588px;
+  top: 398px;
+  transform: translate(-50%, -50%);
 }
 
 /* Bet chip stack positions — offset inward toward table center */
@@ -134,20 +183,61 @@
   left: -10px;
 }
 
-/* Seat 6 (top-left, 9-max): chips go down + right */
-.bet-pos-6 {
-  bottom: -20px;
-  right: -10px;
+/* ===== 9-player bet positions ===== */
+
+/* Seat 9-0 (bottom center): chips go up */
+.bet-pos-9-0 {
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-/* Seat 7 (top center-right, 9-max): chips go down + left */
-.bet-pos-7 {
-  bottom: -20px;
-  left: -10px;
+/* Seat 9-1 (bottom-left): chips go up-right */
+.bet-pos-9-1 {
+  top: -25px;
+  right: -20px;
 }
 
-/* Seat 8 (bottom-right, 9-max): chips go up + left */
-.bet-pos-8 {
-  top: -20px;
-  left: -10px;
+/* Seat 9-2 (left): chips go right */
+.bet-pos-9-2 {
+  top: 30%;
+  right: -30px;
+}
+
+/* Seat 9-3 (upper-left): chips go down-right */
+.bet-pos-9-3 {
+  bottom: -20px;
+  right: -20px;
+}
+
+/* Seat 9-4 (top-left): chips go down */
+.bet-pos-9-4 {
+  bottom: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Seat 9-5 (top-right): chips go down */
+.bet-pos-9-5 {
+  bottom: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Seat 9-6 (upper-right): chips go down-left */
+.bet-pos-9-6 {
+  bottom: -20px;
+  left: -20px;
+}
+
+/* Seat 9-7 (right): chips go left */
+.bet-pos-9-7 {
+  top: 30%;
+  left: -30px;
+}
+
+/* Seat 9-8 (bottom-right): chips go up-left */
+.bet-pos-9-8 {
+  top: -25px;
+  left: -20px;
 }

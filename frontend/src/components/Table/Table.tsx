@@ -20,15 +20,15 @@ const seatPositions6 = [
 ];
 
 const seatPositions9 = [
-  { className: 'seat-pos-0' }, // bottom center (user)
-  { className: 'seat-pos-1' }, // bottom left
-  { className: 'seat-pos-2' }, // left
-  { className: 'seat-pos-6' }, // top-left
-  { className: 'seat-pos-3' }, // top center-left
-  { className: 'seat-pos-7' }, // top center-right
-  { className: 'seat-pos-4' }, // top-right
-  { className: 'seat-pos-5' }, // right
-  { className: 'seat-pos-8' }, // bottom-right
+  { className: 'seat-pos-9-0' }, // bottom center (user)
+  { className: 'seat-pos-9-1' }, // bottom-left
+  { className: 'seat-pos-9-2' }, // left
+  { className: 'seat-pos-9-3' }, // upper-left
+  { className: 'seat-pos-9-4' }, // top-left
+  { className: 'seat-pos-9-5' }, // top-right
+  { className: 'seat-pos-9-6' }, // upper-right
+  { className: 'seat-pos-9-7' }, // right
+  { className: 'seat-pos-9-8' }, // bottom-right
 ];
 
 export function Table({ state }: TableProps) {

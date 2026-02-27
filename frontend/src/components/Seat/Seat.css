@@ -66,9 +66,11 @@
 }
 
 .seat-position {
-  font-size: 10px;
+  font-size: 9px;
   color: #7f8c8d;
   text-transform: uppercase;
+  margin-left: 4px;
+  font-weight: normal;
 }
 
 .seat-cards {

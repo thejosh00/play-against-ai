@@ -23,6 +23,7 @@ export function Seat({ player, isCurrentPlayer, phase }: SeatProps) {
         <div className="seat-name">
           {player.name}
           {player.isDealer && <span className="dealer-btn">D</span>}
+          <span className="seat-position">{player.position}</span>
         </div>
         {player.playerType && (
           <div className="seat-type">{player.playerType}</div>
@@ -31,7 +32,6 @@ export function Seat({ player, isCurrentPlayer, phase }: SeatProps) {
           <div className="seat-type">{player.playerStats}</div>
         )}
         <div className="seat-chips">${player.chips}</div>
-        <div className="seat-position">{player.position}</div>
       </div>
 
       <div className="seat-cards">
