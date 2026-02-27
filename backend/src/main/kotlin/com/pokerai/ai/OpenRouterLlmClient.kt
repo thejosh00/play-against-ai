@@ -12,6 +12,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import com.pokerai.appJson
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -112,17 +113,23 @@ class OpenRouterLlmClient(
     }
 
     private suspend fun chatCompletion(request: OpenRouterChatRequest): String {
-        val response = httpClient.post("https://openrouter.ai/api/v1/chat/completions") {
-            contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $apiKey")
-            setBody(request)
+        logger.info("Calling OpenRouter (model=${request.model})...")
+        val start = System.currentTimeMillis()
+        return withTimeout(60_000L) {
+            val response = httpClient.post("https://openrouter.ai/api/v1/chat/completions") {
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $apiKey")
+                setBody(request)
+            }
+
+            val responseText = response.bodyAsText()
+            val elapsed = System.currentTimeMillis() - start
+            logger.info("OpenRouter responded in ${elapsed}ms")
+            val parsed = appJson.decodeFromString<OpenRouterChatResponse>(responseText)
+
+            parsed.choices.firstOrNull()?.message?.content
+                ?: throw Exception("Empty response from OpenRouter")
         }
-
-        val responseText = response.bodyAsText()
-        val parsed = appJson.decodeFromString<OpenRouterChatResponse>(responseText)
-
-        return parsed.choices.firstOrNull()?.message?.content
-            ?: throw Exception("Empty response from OpenRouter")
     }
 
     override suspend fun isAvailable(): Boolean {

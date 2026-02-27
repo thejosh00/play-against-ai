@@ -27,7 +27,8 @@ object DecisionContextBuilder {
         state: GameState,
         instinctOverride: Int? = null,
         sessionTracker: SessionTracker? = null,
-        opponentModeler: OpponentModeler? = null
+        opponentModeler: OpponentModeler? = null,
+        difficulty: Difficulty? = null
     ): DecisionContext {
         val holeCards = player.holeCards
             ?: error("Player ${player.name} has no hole cards")
@@ -67,7 +68,7 @@ object DecisionContextBuilder {
 
         // Phase 7: Session and opponent context
         val sessionStats = sessionTracker?.getStats(player.index, player.chips)
-        val opponentReads = opponentModeler?.getOpponentReads(state.players, player.index) ?: emptyList()
+        val opponentReads = opponentModeler?.getOpponentReads(state.players, player.index, difficulty) ?: emptyList()
 
         val facingBet = betToCall > 0
         val bettorIndex = if (facingBet) {

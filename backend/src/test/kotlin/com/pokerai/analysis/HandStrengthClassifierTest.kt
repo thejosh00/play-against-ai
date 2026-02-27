@@ -244,9 +244,9 @@ class HandStrengthClassifierTest {
     // ========== Edge Cases ==========
 
     @Test
-    fun `board only pair is weak`() {
+    fun `board only pair is nothing`() {
         val result = HandStrengthClassifier.analyze(hole("As", "Kc"), board("7d", "7h", "2s"))
-        assertEquals(HandStrengthTier.WEAK, result.tier)
+        assertEquals(HandStrengthTier.NOTHING, result.tier)
     }
 
     @Test

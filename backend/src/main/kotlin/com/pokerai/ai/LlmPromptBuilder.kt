@@ -207,13 +207,15 @@ object LlmPromptBuilder {
         if (ctx.opponents.isEmpty()) return ""
 
         val opponentLines = ctx.opponents.joinToString("\n            ") { opp ->
-            val typeStr = if (opp.playerType != OpponentType.UNKNOWN) {
+            val readStr = if (opp.readSentence.isNotEmpty()) {
+                " — ${opp.readSentence}"
+            } else if (opp.playerType != OpponentType.UNKNOWN) {
                 " — ${opp.playerType.name.lowercase().replace('_', ' ')}"
             } else {
                 " — unknown style"
             }
             val notable = opp.recentNotableAction?.let { " ($it)" } ?: ""
-            "- ${opp.position.label} (${opp.playerName}): ${opp.stack} chips$typeStr$notable"
+            "- ${opp.position.label} (${opp.playerName}): ${opp.stack} chips$readStr$notable"
         }
 
         return """OPPONENTS:

@@ -36,6 +36,12 @@ object HandStrengthClassifier {
         holeCards: HoleCards,
         communityCards: List<Card>
     ): HandStrengthTier {
+        // Player has nothing
+        if (evaluation.rank == HandRank.HIGH_CARD) return HandStrengthTier.NOTHING
+        if (evaluation.rank == HandRank.ONE_PAIR && isBoardOnlyPair(evaluation, holeCards, communityCards)) {
+            return HandStrengthTier.NOTHING
+        }
+
         // 4-flush on board: anything that doesn't beat a flush is weak
         val fourFlushSuit = communityCards.groupBy { it.suit }.entries.find { it.value.size >= 4 }?.key
         if (fourFlushSuit != null && evaluation.rank < HandRank.FLUSH) {
@@ -146,7 +152,7 @@ object HandStrengthClassifier {
 
         // Check if this is a board-only pair (pair exists entirely on the board)
         if (isBoardOnlyPair(evaluation, holeCards, communityCards)) {
-            return HandStrengthTier.WEAK
+            return HandStrengthTier.NOTHING
         }
 
         // Pocket pair

@@ -12,6 +12,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import com.pokerai.appJson
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -75,24 +76,31 @@ class OllamaLlmClient(
             stream = false
         )
 
+        val start = System.currentTimeMillis()
         return try {
-            val response = httpClient.post("$baseUrl/api/chat") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
+            logger.info("Calling Ollama for ${player.name} enriched decision (model=$model)...")
+            withTimeout(60_000L) {
+                val response = httpClient.post("$baseUrl/api/chat") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+                val responseText = response.bodyAsText()
+                val elapsed = System.currentTimeMillis() - start
+                logger.info("Ollama responded for ${player.name} in ${elapsed}ms")
+                val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
+
+                val content = ollamaResponse.message?.content
+                    ?: throw Exception("Empty response from Ollama")
+
+                logger.debug("LLM enriched response for ${player.name}: $content")
+
+                val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
+                AiDecision(action, reasoning, "llm")
             }
-
-            val responseText = response.bodyAsText()
-            val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
-
-            val content = ollamaResponse.message?.content
-                ?: throw Exception("Empty response from Ollama")
-
-            logger.debug("LLM enriched response for ${player.name}: $content")
-
-            val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
-            AiDecision(action, reasoning, "llm")
         } catch (e: Exception) {
-            logger.warn("Enriched LLM call failed for ${player.name}: ${e.message}, falling back to coded suggestion")
+            val elapsed = System.currentTimeMillis() - start
+            logger.warn("Enriched LLM call failed for ${player.name} after ${elapsed}ms: ${e.message}, falling back to coded suggestion")
             AiDecision(codedSuggestion.action, null, "llm-fallback")
         }
     }
@@ -110,24 +118,31 @@ class OllamaLlmClient(
             stream = false
         )
 
+        val start = System.currentTimeMillis()
         return try {
-            val response = httpClient.post("$baseUrl/api/chat") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
+            logger.info("Calling Ollama for ${player.name} basic decision (model=$model)...")
+            withTimeout(60_000L) {
+                val response = httpClient.post("$baseUrl/api/chat") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+                val responseText = response.bodyAsText()
+                val elapsed = System.currentTimeMillis() - start
+                logger.info("Ollama responded for ${player.name} in ${elapsed}ms")
+                val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
+
+                val content = ollamaResponse.message?.content
+                    ?: throw Exception("Empty response from Ollama")
+
+                logger.debug("LLM response for ${player.name}: $content")
+
+                val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
+                AiDecision(action, reasoning, "llm")
             }
-
-            val responseText = response.bodyAsText()
-            val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
-
-            val content = ollamaResponse.message?.content
-                ?: throw Exception("Empty response from Ollama")
-
-            logger.debug("LLM response for ${player.name}: $content")
-
-            val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
-            AiDecision(action, reasoning, "llm")
         } catch (e: Exception) {
-            logger.warn("LLM call failed for ${player.name}: ${e.message}, falling back to coded default")
+            val elapsed = System.currentTimeMillis() - start
+            logger.warn("LLM call failed for ${player.name} after ${elapsed}ms: ${e.message}, falling back to coded default")
             val callAmount = state.currentBetLevel - player.currentBet
             val action = if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
             AiDecision(action, null, "llm-fallback")

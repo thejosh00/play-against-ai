@@ -3,6 +3,7 @@ package com.pokerai.session
 import com.pokerai.ai.OpponentModeler
 import com.pokerai.analysis.*
 import com.pokerai.model.*
+import com.pokerai.model.Difficulty
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -22,6 +23,7 @@ object HandHistoryWriter {
         boardAnalysisByPhase: Map<GamePhase, BoardAnalysis> = emptyMap(),
         tournamentPlayersRemaining: Int? = null,
         opponentModeler: OpponentModeler? = null,
+        difficulty: Difficulty? = null,
         dir: File = File("hand_histories")
     ) {
         dir.mkdirs()
@@ -42,8 +44,13 @@ object HandHistoryWriter {
             val type = if (player.isHuman) {
                 "Human"
             } else if (opponentModeler != null) {
-                val read = opponentModeler.getRead(player)
-                "VPIP: ${(read.vpip * 100).toInt()}%, PFR: ${(read.pfr * 100).toInt()}%"
+                val read = if (difficulty != null) {
+                    opponentModeler.getRead(player, difficulty)
+                } else {
+                    opponentModeler.getRead(player)
+                }
+                val stats = "VPIP: ${(read.vpip * 100).toInt()}%, PFR: ${(read.pfr * 100).toInt()}%"
+                if (read.readSentence.isNotEmpty()) "$stats — ${read.readSentence}" else stats
             } else {
                 "AI"
             }

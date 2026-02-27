@@ -13,6 +13,7 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import com.pokerai.appJson
+import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
 class GameSession(
@@ -27,6 +28,7 @@ class GameSession(
     private val aiThinkingDelayMs: LongRange = 1000L..3000L,
     private val handHistoryEnabled: Boolean = true
 ) {
+    private val logger = LoggerFactory.getLogger(GameSession::class.java)
     private var state: GameState? = null
     private var config: GameConfig? = null
     private var tournamentState: TournamentState? = null
@@ -168,10 +170,12 @@ class GameSession(
                 sendActionPerformed(player, action, isBet)
             } else {
                 sendState()
+                logger.debug("[Hand #${s.handNumber}] Waiting for ${player.name} (${s.phase})...")
                 val thinkingDelay = aiThinkingDelayMs.random()
                 val start = System.currentTimeMillis()
                 val decision = aiService.decide(player, s, config, tournamentState)
                 val elapsed = System.currentTimeMillis() - start
+                logger.debug("[Hand #${s.handNumber}] ${player.name}: ${decision.action.type} (${decision.source}, ${elapsed}ms)")
                 val remaining = thinkingDelay - elapsed
                 if (remaining > 0) delay(remaining)
                 val isBet = decision.action.type == ActionType.RAISE && s.currentBetLevel == 0 && s.phase != GamePhase.PRE_FLOP
@@ -263,7 +267,7 @@ class GameSession(
             val holeCardsMap = s.players
                 .filter { it.holeCards != null }
                 .associate { it.index to it.holeCards!! }
-            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, boardAnalysisByPhase, tournamentState?.remainingPlayers, opponentModeler)
+            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, boardAnalysisByPhase, tournamentState?.remainingPlayers, opponentModeler, config?.difficulty)
         }
 
         // Post-hand processing depends on game mode
@@ -437,7 +441,11 @@ class GameSession(
     }
 
     private suspend fun sendMessage(msg: ServerMessage) {
-        val text = appJson.encodeToString(ServerMessage.serializer(), msg)
-        wsSession.send(Frame.Text(text))
+        try {
+            val text = appJson.encodeToString(ServerMessage.serializer(), msg)
+            wsSession.send(Frame.Text(text))
+        } catch (e: Exception) {
+            logger.warn("Failed to send WebSocket message (${msg::class.simpleName}): ${e.message}")
+        }
     }
 }

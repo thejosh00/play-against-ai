@@ -29,7 +29,7 @@ object EvalCli {
 
     fun main(_args: Array<String>) {
         //val args = _args
-        val args = arrayOf("--quick", "--openrouter", "qwen/qwen3.5-plus-02-15", "--timeout", "180")
+        val args = arrayOf("--quick", "--openrouter", "minimax/minimax-m2.5:nitro", "--timeout", "180")
         val config = parseArgs(args)
 
         if (config.showHelp) {
