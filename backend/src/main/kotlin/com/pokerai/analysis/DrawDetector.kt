@@ -114,21 +114,20 @@ object DrawDetector {
                         draws.add(DrawInfo(type = DrawType.OESD, outs = 8, isNut = false))
                         foundOesd = true
                     }
-                } else {
-                    if (!foundGutshot) {
-                        draws.add(DrawInfo(type = DrawType.GUTSHOT, outs = 4, isNut = false))
-                        foundGutshot = true
-                    }
+                } else if (!foundGutshot && !foundOesd) {
+                    draws.add(DrawInfo(type = DrawType.GUTSHOT, outs = 4, isNut = false))
+                    foundGutshot = true
                 }
             } else {
                 // Missing card is internal → gutshot
-                if (!foundGutshot) {
+                // Skip if OESD already found — the gutshot's missing rank overlaps with OESD outs
+                if (!foundGutshot && !foundOesd) {
                     draws.add(DrawInfo(type = DrawType.GUTSHOT, outs = 4, isNut = false))
                     foundGutshot = true
                 }
             }
 
-            if (foundOesd && foundGutshot) break
+            if (foundOesd) break
         }
 
         return draws

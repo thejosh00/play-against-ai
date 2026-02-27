@@ -7,6 +7,7 @@ backend/build/
 backend/.gradle/
 backend/out/
 backend/hand_histories
+backend/llm_logs
 
 # Frontend
 frontend/node_modules/

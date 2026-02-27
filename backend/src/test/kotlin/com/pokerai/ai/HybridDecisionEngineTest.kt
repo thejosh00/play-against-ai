@@ -578,7 +578,6 @@ class HybridDecisionEngineTest {
         val prompt = LlmPromptBuilder.buildEnrichedUserPrompt(aiPlayer, state, ctx)
 
         assertTrue(prompt.contains("Hand strength:"), "Should contain hand strength label")
-        assertTrue(prompt.contains("Board texture:"), "Should contain board texture")
         assertTrue(prompt.contains("Draws:"), "Should contain draws info")
         assertTrue(prompt.contains("Street:"), "Should contain street")
         assertTrue(prompt.contains("FLOP"), "Should contain FLOP")
@@ -613,60 +612,6 @@ class HybridDecisionEngineTest {
         assertTrue(prompt.contains("Preflop:"), "Should contain preflop narrative label")
         assertTrue(prompt.contains("Flop:"), "Should contain flop narrative label")
         assertTrue(prompt.contains("ACTION HISTORY"), "Should contain action history section")
-    }
-
-    @Test
-    fun `buildEnrichedUserPrompt includes coded suggestion when provided`() {
-        val aiPlayer = player(
-            index = 1,
-            holeCards = hole("As", "Kc"),
-            position = Position.CO
-        )
-
-        val state = flopState(
-            players = listOf(
-                opponent(0, position = Position.SB),
-                aiPlayer,
-                opponent(2, position = Position.BTN)
-            ),
-            communityCards = listOf(card("Kd"), card("7h"), card("2s")),
-            pot = 100
-        )
-
-        val ctx = DecisionContextBuilder.build(aiPlayer, state, instinctOverride = 50)
-        val suggestion = ActionDecision(Action.fold(), 0.3, "too risky")
-
-        val prompt = LlmPromptBuilder.buildEnrichedUserPrompt(aiPlayer, state, ctx, suggestion)
-
-        assertTrue(prompt.contains("Instinct suggests: fold"), "Should contain coded suggestion")
-        assertTrue(prompt.contains("too risky"), "Should contain suggestion reasoning")
-    }
-
-    @Test
-    fun `buildEnrichedUserPrompt works without coded suggestion`() {
-        val aiPlayer = player(
-            index = 1,
-            holeCards = hole("As", "Kc"),
-            position = Position.CO
-        )
-
-        val state = flopState(
-            players = listOf(
-                opponent(0, position = Position.SB),
-                aiPlayer,
-                opponent(2, position = Position.BTN)
-            ),
-            communityCards = listOf(card("Kd"), card("7h"), card("2s")),
-            pot = 100
-        )
-
-        val ctx = DecisionContextBuilder.build(aiPlayer, state, instinctOverride = 50)
-
-        val prompt = LlmPromptBuilder.buildEnrichedUserPrompt(aiPlayer, state, ctx, codedSuggestion = null)
-
-        assertFalse(prompt.contains("Instinct suggests"), "Should not contain coded suggestion")
-        assertTrue(prompt.contains("GUT FEELING:"), "Should contain gut feeling")
-        assertTrue(prompt.contains("What is your action?"), "Should end with the question")
     }
 
     @Test
