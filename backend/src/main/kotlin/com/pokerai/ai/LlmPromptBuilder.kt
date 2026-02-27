@@ -53,7 +53,6 @@ object LlmPromptBuilder {
             BOARD:
             - Community cards: $community
             - Street: ${ctx.street.name}
-            - Board texture: ${ctx.board.description}
             ${buildBoardThreats(ctx)}
             POT & SIZING:
             - Pot size: ${ctx.potSize}
