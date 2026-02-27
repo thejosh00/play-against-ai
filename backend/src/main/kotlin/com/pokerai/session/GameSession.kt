@@ -263,7 +263,7 @@ class GameSession(
             val holeCardsMap = s.players
                 .filter { it.holeCards != null }
                 .associate { it.index to it.holeCards!! }
-            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, boardAnalysisByPhase, tournamentState?.remainingPlayers)
+            HandHistoryWriter.writeHand(s, results, holeCardsMap, aiReasoningByActionIndex, startingChips, handAnalysisByPhase, boardAnalysisByPhase, tournamentState?.remainingPlayers, opponentModeler)
         }
 
         // Post-hand processing depends on game mode
@@ -387,6 +387,7 @@ class GameSession(
         when (msg.setting) {
             "showAiCards" -> s.showAiCards = msg.value
             "showPlayerTypes" -> s.showPlayerTypes = msg.value
+            "showStats" -> s.showStats = msg.value
         }
         sendState()
     }
@@ -420,7 +421,7 @@ class GameSession(
 
     private suspend fun sendState() {
         val s = state ?: return
-        sendMessage(s.toUpdate(gameLabel = buildGameLabel()))
+        sendMessage(s.toUpdate(gameLabel = buildGameLabel(), opponentModeler = opponentModeler))
     }
 
     private suspend fun sendActionPerformed(player: Player, action: Action, isBet: Boolean = false) {

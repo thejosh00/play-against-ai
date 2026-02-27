@@ -1,5 +1,6 @@
 package com.pokerai.dto
 
+import com.pokerai.ai.OpponentModeler
 import com.pokerai.model.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -21,6 +22,7 @@ sealed class ServerMessage {
         val handNumber: Int,
         val showAiCards: Boolean,
         val showPlayerTypes: Boolean,
+        val showStats: Boolean,
         val ante: Int = 0,
         val gameLabel: String? = null
     ) : ServerMessage()
@@ -95,6 +97,7 @@ data class PlayerDto(
     val holeCards: List<CardDto>?,
     val lastAction: String?,
     val playerType: String?,
+    val playerStats: String?,
     val position: String,
     val isThinking: Boolean = false
 )
@@ -114,7 +117,7 @@ data class HoleCardsDto(
     val mucked: Boolean = false
 )
 
-fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null): ServerMessage.GameStateUpdate {
+fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null, opponentModeler: OpponentModeler? = null): ServerMessage.GameStateUpdate {
     val userCallAmount = if (currentPlayerIndex == userIndex && currentPlayerIndex >= 0) {
         val player = players[userIndex]
         minOf(currentBetLevel - player.currentBet, player.chips).coerceAtLeast(0)
@@ -148,6 +151,10 @@ fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null): ServerMes
                 playerType = if (showPlayerTypes && !player.isHuman) {
                     player.profile?.archetype?.displayName
                 } else null,
+                playerStats = if (showStats && !player.isHuman && opponentModeler != null) {
+                    val read = opponentModeler.getRead(player)
+                    "VPIP: ${(read.vpip * 100).toInt()}% / PFR: ${(read.pfr * 100).toInt()}%"
+                } else null,
                 position = player.position.label
             )
         },
@@ -159,6 +166,7 @@ fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null): ServerMes
         handNumber = handNumber,
         showAiCards = showAiCards,
         showPlayerTypes = showPlayerTypes,
+        showStats = showStats,
         ante = ante,
         gameLabel = gameLabel
     )

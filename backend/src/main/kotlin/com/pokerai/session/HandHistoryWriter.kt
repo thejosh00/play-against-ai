@@ -1,5 +1,6 @@
 package com.pokerai.session
 
+import com.pokerai.ai.OpponentModeler
 import com.pokerai.analysis.*
 import com.pokerai.model.*
 import java.io.File
@@ -20,6 +21,7 @@ object HandHistoryWriter {
         handAnalysisByPhase: Map<GamePhase, Map<Int, HandAnalysis>>,
         boardAnalysisByPhase: Map<GamePhase, BoardAnalysis> = emptyMap(),
         tournamentPlayersRemaining: Int? = null,
+        opponentModeler: OpponentModeler? = null,
         dir: File = File("hand_histories")
     ) {
         dir.mkdirs()
@@ -37,7 +39,14 @@ object HandHistoryWriter {
         // Players
         sb.appendLine("--- Players ---")
         for (player in state.playersInHand) {
-            val type = if (player.isHuman) "Human" else player.profile?.archetype?.displayName ?: "AI"
+            val type = if (player.isHuman) {
+                "Human"
+            } else if (opponentModeler != null) {
+                val read = opponentModeler.getRead(player)
+                "VPIP: ${(read.vpip * 100).toInt()}%, PFR: ${(read.pfr * 100).toInt()}%"
+            } else {
+                "AI"
+            }
             val chips = startingChips[player.index] ?: player.chips
             sb.appendLine("Seat ${player.index}: ${player.name} (${player.position.label}) - $chips chips [$type]")
         }

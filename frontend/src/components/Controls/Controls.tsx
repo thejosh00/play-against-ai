@@ -3,6 +3,7 @@ import './Controls.css';
 interface ControlsProps {
   showAiCards: boolean;
   showPlayerTypes: boolean;
+  showStats: boolean;
   onToggle: (setting: string, value: boolean) => void;
   onDealNextHand: () => void;
   canDeal: boolean;
@@ -11,6 +12,7 @@ interface ControlsProps {
 export function Controls({
   showAiCards,
   showPlayerTypes,
+  showStats,
   onToggle,
   onDealNextHand,
   canDeal,
@@ -33,6 +35,15 @@ export function Controls({
           onChange={(e) => onToggle('showPlayerTypes', e.target.checked)}
         />
         <span>Show Player Types</span>
+      </label>
+
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={showStats}
+          onChange={(e) => onToggle('showStats', e.target.checked)}
+        />
+        <span>Show Stats</span>
       </label>
 
       {canDeal && (

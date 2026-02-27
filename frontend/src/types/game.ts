@@ -18,6 +18,7 @@ export interface PlayerDto {
   holeCards: CardDto[] | null;
   lastAction: string | null;
   playerType: string | null;
+  playerStats: string | null;
   position: string;
   isThinking: boolean;
 }
@@ -49,6 +50,7 @@ export interface GameStateUpdate {
   handNumber: number;
   showAiCards: boolean;
   showPlayerTypes: boolean;
+  showStats: boolean;
   ante: number;
   gameLabel: string | null;
 }

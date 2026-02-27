@@ -30,6 +30,7 @@ data class GameState(
     var handNumber: Int = 0,
     var showAiCards: Boolean = false,
     var showPlayerTypes: Boolean = false,
+    var showStats: Boolean = false,
     val deck: Deck = Deck(),
     val actionHistory: MutableList<ActionRecord> = mutableListOf(),
     var showdownRevealedPlayers: Set<Int> = emptySet()

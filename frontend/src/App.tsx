@@ -53,6 +53,7 @@ function App() {
       <Controls
         showAiCards={state.showAiCards}
         showPlayerTypes={state.showPlayerTypes}
+        showStats={state.showStats}
         onToggle={handleToggle}
         onDealNextHand={handleDealNextHand}
         canDeal={canDeal}
