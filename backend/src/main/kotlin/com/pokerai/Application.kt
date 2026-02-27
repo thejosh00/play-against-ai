@@ -2,6 +2,7 @@ package com.pokerai
 
 import com.pokerai.ai.AiDecisionService
 import com.pokerai.ai.LlmClient
+import com.pokerai.ai.LlmRequestLogger
 import com.pokerai.ai.OllamaLlmClient
 import com.pokerai.ai.OpenRouterLlmClient
 import com.pokerai.plugins.*
@@ -31,8 +32,12 @@ fun Application.module() {
 
     val aiService = AiDecisionService(llmClient = llmClient)
 
+    val handHistoryEnabled = environment.config.property("logging.handHistory").getString().toBoolean()
+    val llmLoggingEnabled = environment.config.property("logging.llmRequests").getString().toBoolean()
+    LlmRequestLogger.enabled = llmLoggingEnabled
+
     configureSerialization()
     configureWebSockets()
     configureCors()
-    configureRouting(llmClient, aiService)
+    configureRouting(llmClient, aiService, handHistoryEnabled)
 }

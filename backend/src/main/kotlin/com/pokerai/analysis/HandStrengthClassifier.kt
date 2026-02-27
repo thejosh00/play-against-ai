@@ -132,6 +132,11 @@ object HandStrengthClassifier {
         // If one pair is on the board, the player's real contribution is a single pair
         if (boardPairs.any { it in twoPairRanks }) {
             val playerPairRank = twoPairRanks.first { it !in boardPairs }
+            if (holeCards.isPair) {
+                // Pocket pair + board pair = two pair; classify by the pocket pair strength
+                val boardRanks = communityCards.map { it.rank.value }.sortedDescending()
+                return classifyPocketPair(playerPairRank, boardRanks)
+            }
             val holeRanksList = holeCards.toList().map { it.rank.value }.sortedDescending()
             val boardRanks = communityCards.map { it.rank.value }.sortedDescending()
             return classifyBoardPair(playerPairRank, holeRanksList, boardRanks)
@@ -311,15 +316,20 @@ object HandStrengthClassifier {
                     && !boardPairsDesc.containsAll(twoPairRanksDesc)
                 ) {
                     val playerPairRank = twoPairRanksDesc.first { it !in boardPairsDesc }
-                    val kicker = holeRanks.first { it != playerPairRank }
-                    val sortedBoardUnique = boardRanks.distinct().sortedDescending()
-                    when {
-                        playerPairRank == boardRanks.max() ->
-                            "top pair, ${rankName(kicker).lowercase()} kicker"
-                        sortedBoardUnique.size >= 2 && playerPairRank == sortedBoardUnique[1] ->
-                            "second pair, ${rankName(playerPairRank).lowercase()}s"
-                        else ->
-                            "bottom pair, ${rankName(playerPairRank).lowercase()}s"
+                    if (holeCards.isPair) {
+                        // Pocket pair + board pair
+                        "two pair, pocket ${rankName(playerPairRank).lowercase()}s"
+                    } else {
+                        val kicker = holeRanks.first { it != playerPairRank }
+                        val sortedBoardUnique = boardRanks.distinct().sortedDescending()
+                        when {
+                            playerPairRank == boardRanks.max() ->
+                                "top pair, ${rankName(kicker).lowercase()} kicker"
+                            sortedBoardUnique.size >= 2 && playerPairRank == sortedBoardUnique[1] ->
+                                "second pair, ${rankName(playerPairRank).lowercase()}s"
+                            else ->
+                                "bottom pair, ${rankName(playerPairRank).lowercase()}s"
+                        }
                     }
                 } else {
                     "two pair, ${rankName(high).lowercase()}s and ${rankName(low).lowercase()}s"

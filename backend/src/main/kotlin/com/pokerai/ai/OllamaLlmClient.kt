@@ -65,7 +65,7 @@ class OllamaLlmClient(
         codedSuggestion: ActionDecision
     ): AiDecision {
         val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
-        val userPrompt = LlmPromptBuilder.buildEnrichedUserPrompt(player, state, ctx, codedSuggestion)
+        val userPrompt = LlmPromptBuilder.buildEnrichedUserPrompt(player, state, ctx)
 
         val request = OllamaChatRequest(
             model = model,
@@ -96,6 +96,17 @@ class OllamaLlmClient(
                 logger.debug("LLM enriched response for ${player.name}: $content")
 
                 val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
+                LlmRequestLogger.log(
+                    playerName = player.name,
+                    handNumber = state.handNumber,
+                    model = model,
+                    systemPrompt = systemPrompt,
+                    userPrompt = userPrompt,
+                    rawResponse = content,
+                    action = action,
+                    reasoning = reasoning,
+                    elapsedMs = elapsed
+                )
                 AiDecision(action, reasoning, "llm")
             }
         } catch (e: Exception) {

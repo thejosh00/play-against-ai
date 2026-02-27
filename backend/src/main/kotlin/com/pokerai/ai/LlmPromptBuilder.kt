@@ -1,6 +1,5 @@
 package com.pokerai.ai
 
-import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.*
 
 object LlmPromptBuilder {
@@ -28,8 +27,7 @@ object LlmPromptBuilder {
     fun buildEnrichedUserPrompt(
         player: Player,
         state: GameState,
-        ctx: DecisionContext,
-        codedSuggestion: ActionDecision? = null
+        ctx: DecisionContext
     ): String {
         val holeCards = player.holeCards?.let {
             "${it.card1.notation} ${it.card2.notation}"
@@ -42,17 +40,6 @@ object LlmPromptBuilder {
         else ctx.hand.draws.joinToString(", ") { draw ->
             "${draw.type.name.lowercase().replace('_', ' ')} (${draw.outs} outs${if (draw.isNut) ", to the nuts" else ""})"
         }
-
-        val suggestedAction = codedSuggestion?.let { suggestion ->
-            val actionStr = when (suggestion.action.type) {
-                ActionType.FOLD -> "fold"
-                ActionType.CHECK -> "check"
-                ActionType.CALL -> "call"
-                ActionType.RAISE -> "raise to ${suggestion.action.amount}"
-                ActionType.ALL_IN -> "all-in"
-            }
-            "\n            - Instinct suggests: $actionStr (${suggestion.reasoning ?: "no specific reason"})"
-        } ?: ""
 
         return """
             Current game state:
@@ -91,7 +78,7 @@ object LlmPromptBuilder {
             - Turn: ${ctx.actions.turnNarrative}
             - River: ${ctx.actions.riverNarrative}
 
-            ${buildSessionSection(ctx)}${buildOpponentSection(ctx)}${buildGutFeeling(ctx)}$suggestedAction
+            ${buildSessionSection(ctx)}${buildOpponentSection(ctx)}
 
             What is your action?
         """.trimIndent()
@@ -140,17 +127,6 @@ object LlmPromptBuilder {
         }
     }
 
-    private fun buildGutFeeling(ctx: DecisionContext): String {
-        val feeling = when {
-            ctx.instinct >= 80 -> "confident"
-            ctx.instinct >= 60 -> "fairly confident"
-            ctx.instinct >= 40 -> "neutral"
-            ctx.instinct >= 20 -> "cautious"
-            else -> "very cautious"
-        }
-        return "GUT FEELING: You feel $feeling about this hand."
-    }
-
     private fun buildSessionSection(ctx: DecisionContext): String {
         return ctx.sessionStats?.let { stats ->
             val trend = when {
@@ -180,15 +156,17 @@ object LlmPromptBuilder {
         if (ctx.opponents.isEmpty()) return ""
 
         val opponentLines = ctx.opponents.joinToString("\n            ") { opp ->
+            val isBettor = ctx.bettorRead?.playerIndex == opp.playerIndex
+            val prefix = if (isBettor) "[BETTOR] " else ""
             val readStr = if (opp.readSentence.isNotEmpty()) {
-                " — ${opp.readSentence}"
+                opp.readSentence
             } else if (opp.playerType != OpponentType.UNKNOWN) {
-                " — ${opp.playerType.name.lowercase().replace('_', ' ')}"
+                opp.playerType.name.lowercase().replace('_', ' ')
             } else {
-                " — unknown style"
+                "unknown style"
             }
             val notable = opp.recentNotableAction?.let { " ($it)" } ?: ""
-            "- ${opp.position.label} (${opp.playerName}): ${opp.stack} chips$readStr$notable"
+            "$prefix- ${opp.position.label} (${opp.playerName}): ${opp.stack} chips — $readStr$notable"
         }
 
         return """OPPONENTS:

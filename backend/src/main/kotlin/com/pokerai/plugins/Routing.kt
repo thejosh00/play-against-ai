@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-fun Application.configureRouting(llmClient: LlmClient, aiService: AiDecisionService) {
+fun Application.configureRouting(llmClient: LlmClient, aiService: AiDecisionService, handHistoryEnabled: Boolean = false) {
     routing {
         get("/health") {
             val llmConnected = llmClient.isAvailable()
@@ -27,7 +27,7 @@ fun Application.configureRouting(llmClient: LlmClient, aiService: AiDecisionServ
         }
 
         webSocket("/game") {
-            val session = GameSession(wsSession = this, aiService = aiService)
+            val session = GameSession(wsSession = this, aiService = aiService, handHistoryEnabled = handHistoryEnabled)
             try {
                 for (frame in incoming) {
                     when (frame) {

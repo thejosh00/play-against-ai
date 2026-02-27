@@ -36,8 +36,7 @@ object EvalPromptBuilder {
         return LlmPromptBuilder.buildEnrichedUserPrompt(
             player = fakePlayer,
             state = fakeState,
-            ctx = scenario.context,
-            codedSuggestion = null
+            ctx = scenario.context
         )
     }
 

@@ -261,6 +261,22 @@ class HandStrengthClassifierTest {
         assertEquals(HandStrengthTier.MONSTER, result.tier)
     }
 
+    @Test
+    fun `pocket pair with board pair makes two pair without crashing`() {
+        // Pocket JJ on board 7c As 7s = two pair (Jacks and Sevens)
+        val result = HandStrengthClassifier.analyze(hole("Jh", "Jd"), board("7c", "As", "7s"))
+        assertEquals(HandStrengthTier.MEDIUM, result.tier)
+        assertTrue(result.madeHand)
+    }
+
+    @Test
+    fun `pocket overpair with board pair makes strong two pair`() {
+        // Pocket KK on board 7c 3s 7s = two pair (Kings and Sevens), overpair
+        val result = HandStrengthClassifier.analyze(hole("Kh", "Kd"), board("7c", "3s", "7s"))
+        assertEquals(HandStrengthTier.STRONG, result.tier)
+        assertTrue(result.madeHand)
+    }
+
     // ========== hasNutAdvantage Tests ==========
 
     @Test

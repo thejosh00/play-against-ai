@@ -26,7 +26,7 @@ class GameSession(
         opponentModeler = opponentModeler
     ),
     private val aiThinkingDelayMs: LongRange = 1000L..3000L,
-    private val handHistoryEnabled: Boolean = true
+    private val handHistoryEnabled: Boolean = false
 ) {
     private val logger = LoggerFactory.getLogger(GameSession::class.java)
     private var state: GameState? = null
@@ -48,7 +48,8 @@ class GameSession(
                 is ClientMessage.ToggleSetting -> handleToggle(message)
             }
         } catch (e: Exception) {
-            sendMessage(ServerMessage.Error("Invalid message: ${e.message}"))
+            logger.error("Error handling message: ${e.message}", e)
+            sendMessage(ServerMessage.Error("Internal error: ${e.message}"))
         }
     }
 
