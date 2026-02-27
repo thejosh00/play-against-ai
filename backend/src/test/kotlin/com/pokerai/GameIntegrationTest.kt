@@ -32,7 +32,12 @@ class GameIntegrationTest {
 
     /** LlmClient that always calls or checks — used for post-flop AI decisions. */
     private class AlwaysCallLlmClient : LlmClient {
-        override suspend fun getDecision(player: Player, state: GameState): AiDecision {
+        override suspend fun getEnrichedDecision(
+            player: Player,
+            state: GameState,
+            ctx: DecisionContext,
+            codedSuggestion: ActionDecision
+        ): AiDecision {
             val callAmount = state.currentBetLevel - player.currentBet
             val action = if (callAmount > 0) {
                 Action.call(minOf(callAmount, player.chips))
@@ -41,13 +46,6 @@ class GameIntegrationTest {
             }
             return AiDecision(action, null, "test")
         }
-
-        override suspend fun getEnrichedDecision(
-            player: Player,
-            state: GameState,
-            ctx: DecisionContext,
-            codedSuggestion: ActionDecision
-        ): AiDecision = getDecision(player, state)
 
         override suspend fun isAvailable(): Boolean = true
     }

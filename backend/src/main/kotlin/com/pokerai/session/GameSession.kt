@@ -32,6 +32,7 @@ class GameSession(
     private var state: GameState? = null
     private var config: GameConfig? = null
     private var tournamentState: TournamentState? = null
+    @Volatile private var wsDead = false
     private val playerActionChannel = Channel<ClientMessage.PlayerAction>(Channel.RENDEZVOUS)
     private val aiReasoningByActionIndex = mutableMapOf<Int, Pair<String?, String?>>()
     private var startingChips = emptyMap<Int, Int>()
@@ -96,6 +97,7 @@ class GameSession(
         sendState()
 
         // Run pre-flop betting
+        logger.info("[Hand #${s.handNumber}] === PRE-FLOP ===")
         runBettingRound()
 
         if (GameEngine.isHandComplete(s)) {
@@ -105,6 +107,7 @@ class GameSession(
 
         // Flop
         GameEngine.dealCommunity(s)
+        logger.info("[Hand #${s.handNumber}] === FLOP === ${s.communityCards.joinToString(" ") { it.notation }}")
         recordHandAnalysis(s)
         recordBoardAnalysis(s, previousCommunityCount = 0)
         sendState()
@@ -119,6 +122,7 @@ class GameSession(
 
         // Turn
         GameEngine.dealCommunity(s)
+        logger.info("[Hand #${s.handNumber}] === TURN === ${s.communityCards.joinToString(" ") { it.notation }}")
         recordHandAnalysis(s)
         recordBoardAnalysis(s, previousCommunityCount = 3)
         sendState()
@@ -133,6 +137,7 @@ class GameSession(
 
         // River
         GameEngine.dealCommunity(s)
+        logger.info("[Hand #${s.handNumber}] === RIVER === ${s.communityCards.joinToString(" ") { it.notation }}")
         recordHandAnalysis(s)
         recordBoardAnalysis(s, previousCommunityCount = 4)
         sendState()
@@ -146,6 +151,7 @@ class GameSession(
         }
 
         // Showdown
+        logger.info("[Hand #${s.handNumber}] === SHOWDOWN ===")
         finishHand()
     }
 
@@ -161,21 +167,27 @@ class GameSession(
             val player = s.players[nextToAct]
 
             if (player.isHuman) {
+                logger.info("[Hand #${s.handNumber}] Waiting for human (${s.phase})...")
                 sendState()
+                if (wsDead) {
+                    logger.warn("[Hand #${s.handNumber}] WebSocket dead, aborting hand")
+                    return
+                }
                 val playerAction = playerActionChannel.receive()
                 val action = playerActionToAction(playerAction, player, s)
+                logger.info("[Hand #${s.handNumber}] Human: ${action.type}")
                 val isBet = action.type == ActionType.RAISE && s.currentBetLevel == 0 && s.phase != GamePhase.PRE_FLOP
                 opponentModeler.recordAction(nextToAct, action, s.phase)
                 GameEngine.applyAction(s, nextToAct, action)
                 sendActionPerformed(player, action, isBet)
             } else {
                 sendState()
-                logger.debug("[Hand #${s.handNumber}] Waiting for ${player.name} (${s.phase})...")
+                logger.info("[Hand #${s.handNumber}] Waiting for ${player.name} (${s.phase})...")
                 val thinkingDelay = aiThinkingDelayMs.random()
                 val start = System.currentTimeMillis()
                 val decision = aiService.decide(player, s, config, tournamentState)
                 val elapsed = System.currentTimeMillis() - start
-                logger.debug("[Hand #${s.handNumber}] ${player.name}: ${decision.action.type} (${decision.source}, ${elapsed}ms)")
+                logger.info("[Hand #${s.handNumber}] ${player.name}: ${decision.action.type} (${decision.source}, ${elapsed}ms)")
                 val remaining = thinkingDelay - elapsed
                 if (remaining > 0) delay(remaining)
                 val isBet = decision.action.type == ActionType.RAISE && s.currentBetLevel == 0 && s.phase != GamePhase.PRE_FLOP
@@ -441,11 +453,13 @@ class GameSession(
     }
 
     private suspend fun sendMessage(msg: ServerMessage) {
+        if (wsDead) return
         try {
             val text = appJson.encodeToString(ServerMessage.serializer(), msg)
             wsSession.send(Frame.Text(text))
         } catch (e: Exception) {
-            logger.warn("Failed to send WebSocket message (${msg::class.simpleName}): ${e.message}")
+            logger.warn("WebSocket send failed (${msg::class.simpleName}): ${e.message}")
+            wsDead = true
         }
     }
 }

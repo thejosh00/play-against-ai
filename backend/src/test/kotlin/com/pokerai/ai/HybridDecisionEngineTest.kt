@@ -15,19 +15,12 @@ class HybridDecisionEngineTest {
     // ── Test doubles ──────────────────────────────────────────
 
     private class FakeLlmClient(private val fixedAction: Action = Action.check()) : LlmClient {
-        var getDecisionCalled = false
-            private set
         var getEnrichedDecisionCalled = false
             private set
         var lastCtx: DecisionContext? = null
             private set
         var lastCodedSuggestion: ActionDecision? = null
             private set
-
-        override suspend fun getDecision(player: Player, state: GameState): AiDecision {
-            getDecisionCalled = true
-            return AiDecision(fixedAction, null, "test")
-        }
 
         override suspend fun isAvailable(): Boolean = true
 
@@ -172,7 +165,6 @@ class HybridDecisionEngineTest {
 
         val result = engine.decide(aiPlayer, state)
 
-        assertFalse(fakeLlm.getDecisionCalled, "LLM getDecision should not be called")
         assertFalse(fakeLlm.getEnrichedDecisionCalled, "LLM getEnrichedDecision should not be called")
         // Monster facing bet should call or raise (not fold)
         assertTrue(
@@ -210,7 +202,6 @@ class HybridDecisionEngineTest {
 
         val result = engine.decide(aiPlayer, state)
 
-        assertFalse(fakeLlm.getDecisionCalled)
         assertFalse(fakeLlm.getEnrichedDecisionCalled)
         assertEquals(ActionType.FOLD, result.action.type)
     }
@@ -243,13 +234,13 @@ class HybridDecisionEngineTest {
 
         val result = engine.decide(aiPlayer, state)
 
-        assertFalse(fakeLlm.getDecisionCalled, "LLM getDecision should not be called — TAG has coded strategy")
+        assertFalse(fakeLlm.getEnrichedDecisionCalled, "LLM should not be called — TAG has coded strategy")
     }
 
     // ── No profile → LLM called directly ────────────────────
 
     @Test
-    fun `player with no profile falls back to LLM`() = runBlocking {
+    fun `player with no profile throws error`() = runBlocking {
         val fakeLlm = FakeLlmClient(Action.check())
         val engine = HybridDecisionEngine(fakeLlm)
 
@@ -270,10 +261,9 @@ class HybridDecisionEngineTest {
             pot = 100
         )
 
-        val result = engine.decide(aiPlayer, state)
-
-        assertTrue(fakeLlm.getDecisionCalled, "LLM should be called when player has no profile")
-        assertEquals(ActionType.CHECK, result.action.type)
+        assertFailsWith<IllegalStateException> {
+            engine.decide(aiPlayer, state)
+        }
     }
 
     // ── Low-confidence coded decision → LLM fallback ────────
@@ -344,7 +334,6 @@ class HybridDecisionEngineTest {
 
         engine.decide(aiPlayer, state)
 
-        assertFalse(fakeLlm.getDecisionCalled, "LLM should not be called when threshold is 0.0")
         assertFalse(fakeLlm.getEnrichedDecisionCalled, "Enriched LLM should not be called when threshold is 0.0")
     }
 
@@ -411,7 +400,6 @@ class HybridDecisionEngineTest {
 
         service.decide(aiPlayer, state)
 
-        assertFalse(fakeLlm.getDecisionCalled, "LLM should not be called during preflop")
         assertFalse(fakeLlm.getEnrichedDecisionCalled, "Enriched LLM should not be called during preflop")
     }
 
@@ -446,7 +434,7 @@ class HybridDecisionEngineTest {
         // Nit with nothing facing a bet should fold (coded strategy, high confidence)
         // sanitizeAction should leave the fold as-is since there IS a bet
         assertEquals(ActionType.FOLD, result.action.type)
-        assertFalse(fakeLlm.getDecisionCalled, "Coded strategy should handle this without LLM")
+        assertFalse(fakeLlm.getEnrichedDecisionCalled, "Coded strategy should handle this without LLM")
     }
 
     @Test
@@ -478,7 +466,7 @@ class HybridDecisionEngineTest {
 
         val result = service.decide(aiPlayer, state)
 
-        assertFalse(fakeLlm.getDecisionCalled, "LLM should not be called — TAG has coded strategy")
+        assertFalse(fakeLlm.getEnrichedDecisionCalled, "LLM should not be called — TAG has coded strategy")
     }
 
     // ── sanitizeAction still works with coded actions ────────
@@ -677,7 +665,7 @@ class HybridDecisionEngineTest {
         val prompt = LlmPromptBuilder.buildEnrichedUserPrompt(aiPlayer, state, ctx, codedSuggestion = null)
 
         assertFalse(prompt.contains("Instinct suggests"), "Should not contain coded suggestion")
-        assertTrue(prompt.contains("INSTINCT: 50"), "Should still contain instinct value")
+        assertTrue(prompt.contains("GUT FEELING:"), "Should contain gut feeling")
         assertTrue(prompt.contains("What is your action?"), "Should end with the question")
     }
 

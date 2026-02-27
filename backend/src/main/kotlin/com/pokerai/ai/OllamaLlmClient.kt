@@ -105,50 +105,6 @@ class OllamaLlmClient(
         }
     }
 
-    override suspend fun getDecision(player: Player, state: GameState): AiDecision {
-        val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
-        val userPrompt = LlmPromptBuilder.buildUserPrompt(player, state)
-
-        val request = OllamaChatRequest(
-            model = model,
-            messages = listOf(
-                OllamaMessage("system", systemPrompt),
-                OllamaMessage("user", userPrompt)
-            ),
-            stream = false
-        )
-
-        val start = System.currentTimeMillis()
-        return try {
-            logger.info("Calling Ollama for ${player.name} basic decision (model=$model)...")
-            withTimeout(60_000L) {
-                val response = httpClient.post("$baseUrl/api/chat") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
-
-                val responseText = response.bodyAsText()
-                val elapsed = System.currentTimeMillis() - start
-                logger.info("Ollama responded for ${player.name} in ${elapsed}ms")
-                val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
-
-                val content = ollamaResponse.message?.content
-                    ?: throw Exception("Empty response from Ollama")
-
-                logger.debug("LLM response for ${player.name}: $content")
-
-                val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
-                AiDecision(action, reasoning, "llm")
-            }
-        } catch (e: Exception) {
-            val elapsed = System.currentTimeMillis() - start
-            logger.warn("LLM call failed for ${player.name} after ${elapsed}ms: ${e.message}, falling back to coded default")
-            val callAmount = state.currentBetLevel - player.currentBet
-            val action = if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
-            AiDecision(action, null, "llm-fallback")
-        }
-    }
-
     override suspend fun isAvailable(): Boolean {
         return try {
             val response = httpClient.get("$baseUrl/api/tags")

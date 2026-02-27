@@ -13,16 +13,10 @@ class HybridDecisionEngine(
 
     suspend fun decide(player: Player, state: GameState, difficulty: Difficulty? = null): AiDecision {
         val profile = player.profile
-        if (profile == null) {
-            logger.info("[${player.name}] No profile, sending to LLM (basic)")
-            return llmClient.getDecision(player, state)
-        }
+            ?: error("Player ${player.name} has no profile")
 
         val strategy = profile.archetype.getStrategy()
-        if (strategy == null) {
-            logger.info("[${player.name}] No coded strategy for ${profile.archetype}, sending to LLM (basic)")
-            return llmClient.getDecision(player, state)
-        }
+            ?: error("No coded strategy for ${profile.archetype}")
 
         val ctx = DecisionContextBuilder.build(
             player, state,

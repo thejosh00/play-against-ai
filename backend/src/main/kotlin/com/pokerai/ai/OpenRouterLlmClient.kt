@@ -86,31 +86,7 @@ class OpenRouterLlmClient(
         }
     }
 
-    override suspend fun getDecision(player: Player, state: GameState): AiDecision {
-        val systemPrompt = LlmPromptBuilder.buildSystemPrompt(player)
-        val userPrompt = LlmPromptBuilder.buildUserPrompt(player, state)
 
-        val request = OpenRouterChatRequest(
-            model = model,
-            messages = listOf(
-                OpenRouterMessage("system", systemPrompt),
-                OpenRouterMessage("user", userPrompt)
-            ),
-            stream = false
-        )
-
-        return try {
-            val content = chatCompletion(request)
-            logger.debug("LLM response for ${player.name}: $content")
-            val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
-            AiDecision(action, reasoning, "llm")
-        } catch (e: Exception) {
-            logger.warn("LLM call failed for ${player.name}: ${e.message}, falling back to coded default")
-            val callAmount = state.currentBetLevel - player.currentBet
-            val action = if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
-            AiDecision(action, null, "llm-fallback")
-        }
-    }
 
     private suspend fun chatCompletion(request: OpenRouterChatRequest): String {
         logger.info("Calling OpenRouter (model=${request.model})...")
