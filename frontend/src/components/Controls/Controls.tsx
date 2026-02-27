@@ -5,8 +5,6 @@ interface ControlsProps {
   showPlayerTypes: boolean;
   showStats: boolean;
   onToggle: (setting: string, value: boolean) => void;
-  onDealNextHand: () => void;
-  canDeal: boolean;
 }
 
 export function Controls({
@@ -14,8 +12,6 @@ export function Controls({
   showPlayerTypes,
   showStats,
   onToggle,
-  onDealNextHand,
-  canDeal,
 }: ControlsProps) {
   return (
     <div className="controls">
@@ -45,12 +41,6 @@ export function Controls({
         />
         <span>Show Stats</span>
       </label>
-
-      {canDeal && (
-        <button className="btn btn-deal" onClick={onDealNextHand}>
-          Deal Next Hand
-        </button>
-      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useGameState } from './hooks/useGameState';
 import { Table } from './components/Table/Table';
@@ -28,9 +28,16 @@ function App() {
     send({ type: 'toggle_setting', setting, value });
   };
 
-  const handleDealNextHand = () => {
-    send({ type: 'deal_next_hand' });
-  };
+  const canDeal = state?.phase === 'HAND_COMPLETE' || state?.phase === 'SHOWDOWN';
+
+  useEffect(() => {
+    if (canDeal && !tournamentFinished) {
+      const timer = setTimeout(() => {
+        send({ type: 'deal_next_hand' });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [canDeal, tournamentFinished]);
 
   if (!gameStarted || !state) {
     return (
@@ -39,8 +46,6 @@ function App() {
       </div>
     );
   }
-
-  const canDeal = state.phase === 'HAND_COMPLETE' || state.phase === 'SHOWDOWN';
 
   return (
     <div className="app">
@@ -55,8 +60,6 @@ function App() {
         showPlayerTypes={state.showPlayerTypes}
         showStats={state.showStats}
         onToggle={handleToggle}
-        onDealNextHand={handleDealNextHand}
-        canDeal={canDeal}
       />
 
       <Table state={state} />
