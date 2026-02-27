@@ -2,7 +2,6 @@ package com.pokerai.ai
 
 import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.Action
-import com.pokerai.model.ActionType
 import com.pokerai.model.GameState
 import com.pokerai.model.Player
 import io.ktor.client.*
@@ -54,7 +53,7 @@ class OllamaLlmClient(
             })
         }
         engine {
-            requestTimeout = 120_000
+            requestTimeout = 60_000
         }
     }
 
@@ -128,53 +127,11 @@ class OllamaLlmClient(
             val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
             AiDecision(action, reasoning, "llm")
         } catch (e: Exception) {
-            logger.warn("LLM call failed for ${player.name}: ${e.message}, retrying with simple prompt")
-            retrySimple(player, state)
+            logger.warn("LLM call failed for ${player.name}: ${e.message}, falling back to coded default")
+            val callAmount = state.currentBetLevel - player.currentBet
+            val action = if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
+            AiDecision(action, null, "llm-fallback")
         }
-    }
-
-    private suspend fun retrySimple(player: Player, state: GameState): AiDecision {
-        val callAmount = state.currentBetLevel - player.currentBet
-        val prompt = if (callAmount > 0) {
-            "Poker: You have ${player.holeCards?.notation ?: "??"}. Board: ${state.communityCards.joinToString(" ") { it.notation }}. " +
-            "Pot: ${state.pot}. Call amount: $callAmount. " +
-            "Reply with ONLY one word: fold, call, or raise"
-        } else {
-            "Poker: You have ${player.holeCards?.notation ?: "??"}. Board: ${state.communityCards.joinToString(" ") { it.notation }}. " +
-            "Pot: ${state.pot}. " +
-            "Reply with ONLY one word: check or raise"
-        }
-
-        val action = try {
-            val request = OllamaChatRequest(
-                model = model,
-                messages = listOf(OllamaMessage("user", prompt)),
-                stream = false
-            )
-
-            val response = httpClient.post("$baseUrl/api/chat") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }
-
-            val responseText = response.bodyAsText()
-            val ollamaResponse = appJson.decodeFromString<OllamaChatResponse>(responseText)
-
-            val content = ollamaResponse.message?.content?.lowercase()?.trim() ?: ""
-
-            when {
-                "fold" in content -> Action.fold()
-                "raise" in content -> Action.raise(state.currentBetLevel + state.minRaise)
-                "call" in content -> Action.call(minOf(callAmount, player.chips))
-                "check" in content -> Action.check()
-                else -> if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
-            }
-        } catch (e: Exception) {
-            logger.error("LLM retry also failed for ${player.name}: ${e.message}")
-            // Ultimate fallback
-            if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
-        }
-        return AiDecision(action, null, "llm-fallback")
     }
 
     override suspend fun isAvailable(): Boolean {

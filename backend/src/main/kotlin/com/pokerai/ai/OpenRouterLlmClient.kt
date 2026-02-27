@@ -2,7 +2,6 @@ package com.pokerai.ai
 
 import com.pokerai.ai.strategy.ActionDecision
 import com.pokerai.model.Action
-import com.pokerai.model.ActionType
 import com.pokerai.model.GameState
 import com.pokerai.model.Player
 import io.ktor.client.*
@@ -13,7 +12,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import com.pokerai.appJson
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -54,7 +52,7 @@ class OpenRouterLlmClient(
             })
         }
         engine {
-            requestTimeout = 120_000
+            requestTimeout = 60_000
         }
     }
 
@@ -106,8 +104,10 @@ class OpenRouterLlmClient(
             val (action, reasoning) = LlmResponseParser.parseWithReasoning(content, player, state)
             AiDecision(action, reasoning, "llm")
         } catch (e: Exception) {
-            logger.warn("LLM call failed for ${player.name}: ${e.message}, retrying with simple prompt")
-            retrySimple(player, state)
+            logger.warn("LLM call failed for ${player.name}: ${e.message}, falling back to coded default")
+            val callAmount = state.currentBetLevel - player.currentBet
+            val action = if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
+            AiDecision(action, null, "llm-fallback")
         }
     }
 
@@ -123,41 +123,6 @@ class OpenRouterLlmClient(
 
         return parsed.choices.firstOrNull()?.message?.content
             ?: throw Exception("Empty response from OpenRouter")
-    }
-
-    private suspend fun retrySimple(player: Player, state: GameState): AiDecision {
-        val callAmount = state.currentBetLevel - player.currentBet
-        val prompt = if (callAmount > 0) {
-            "Poker: You have ${player.holeCards?.notation ?: "??"}. Board: ${state.communityCards.joinToString(" ") { it.notation }}. " +
-            "Pot: ${state.pot}. Call amount: $callAmount. " +
-            "Reply with ONLY one word: fold, call, or raise"
-        } else {
-            "Poker: You have ${player.holeCards?.notation ?: "??"}. Board: ${state.communityCards.joinToString(" ") { it.notation }}. " +
-            "Pot: ${state.pot}. " +
-            "Reply with ONLY one word: check or raise"
-        }
-
-        val action = try {
-            val request = OpenRouterChatRequest(
-                model = model,
-                messages = listOf(OpenRouterMessage("user", prompt)),
-                stream = false
-            )
-
-            val content = chatCompletion(request).lowercase().trim()
-
-            when {
-                "fold" in content -> Action.fold()
-                "raise" in content -> Action.raise(state.currentBetLevel + state.minRaise)
-                "call" in content -> Action.call(minOf(callAmount, player.chips))
-                "check" in content -> Action.check()
-                else -> if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
-            }
-        } catch (e: Exception) {
-            logger.error("LLM retry also failed for ${player.name}: ${e.message}")
-            if (callAmount > 0) Action.call(minOf(callAmount, player.chips)) else Action.check()
-        }
-        return AiDecision(action, null, "llm-fallback")
     }
 
     override suspend fun isAvailable(): Boolean {
