@@ -139,7 +139,7 @@ class CallingStationStrategy : ArchetypeStrategy {
                     else callAction(ctx, 0.9, "calling with a strong hand")
                 }
                 HandStrengthTier.MEDIUM -> {
-                    callAction(ctx, 0.85, "I have a pair — calling")
+                    callAction(ctx, 0.85, "I have a medium strength hand — calling")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.madeHand || ctx.hand.totalOuts >= 4 || instinct > 45) {
@@ -219,7 +219,7 @@ class CallingStationStrategy : ArchetypeStrategy {
                     callAction(ctx, 0.85, "calling turn with strong hand")
                 }
                 HandStrengthTier.MEDIUM -> {
-                    callAction(ctx, 0.8, "I have a pair on the turn — calling")
+                    callAction(ctx, 0.8, "I have a medium strength hand on the turn — calling")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.madeHand || ctx.hand.totalOuts >= 4 || instinct > 50) {

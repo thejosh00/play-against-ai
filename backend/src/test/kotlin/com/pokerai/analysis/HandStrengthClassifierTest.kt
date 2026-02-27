@@ -386,4 +386,27 @@ class HandStrengthClassifierTest {
         assertEquals(HandStrengthTier.MEDIUM, result.tier)
         assertTrue(result.madeHandDescription.contains("second pair"), result.madeHandDescription)
     }
+
+    // ========== Four-to-a-Straight Board Tests ==========
+
+    @Test
+    fun `four to a straight on board makes two pair weak`() {
+        // 5s 8c on 5d 6h 7s 8d Ac — two pair but board has 5-6-7-8
+        val result = HandStrengthClassifier.analyze(hole("5s", "8c"), board("5d", "6h", "7s", "8d", "Ac"))
+        assertEquals(HandStrengthTier.WEAK, result.tier)
+    }
+
+    @Test
+    fun `made straight on four-straight board is monster`() {
+        // 4s Kc on 5d 6h 7s 8d Ac — made straight
+        val result = HandStrengthClassifier.analyze(hole("4s", "Kc"), board("5d", "6h", "7s", "8d", "Ac"))
+        assertEquals(HandStrengthTier.MONSTER, result.tier)
+    }
+
+    @Test
+    fun `four to a straight with gap makes non-straight weak`() {
+        // 5s Kc on 5d 6h 8s 9d 2c — pair of 5s but board has 5-6-8-9 (gutshot straight)
+        val result = HandStrengthClassifier.analyze(hole("5s", "Kc"), board("5d", "6h", "8s", "9d", "2c"))
+        assertEquals(HandStrengthTier.WEAK, result.tier)
+    }
 }

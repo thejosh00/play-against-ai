@@ -42,6 +42,11 @@ object HandStrengthClassifier {
             return HandStrengthTier.WEAK
         }
 
+        // 4-straight on board: anything that doesn't beat a straight is weak
+        if (hasFourToStraight(communityCards) && evaluation.rank < HandRank.STRAIGHT) {
+            return HandStrengthTier.WEAK
+        }
+
         return when (evaluation.rank) {
             HandRank.ROYAL_FLUSH, HandRank.STRAIGHT_FLUSH, HandRank.FOUR_OF_A_KIND,
             HandRank.FULL_HOUSE -> HandStrengthTier.MONSTER
@@ -367,6 +372,17 @@ object HandStrengthClassifier {
 
         val desc = parts.joinToString(" + ")
         return if (majorOuts > 0) "$desc ($totalOuts outs)" else desc
+    }
+
+    private fun hasFourToStraight(communityCards: List<Card>): Boolean {
+        val uniqueRanks = communityCards.map { it.rank.value }.distinct().toMutableList()
+        if (14 in uniqueRanks) uniqueRanks.add(1) // ace can play low
+        uniqueRanks.sort()
+        if (uniqueRanks.size < 4) return false
+        for (i in 0..uniqueRanks.size - 4) {
+            if (uniqueRanks[i + 3] - uniqueRanks[i] <= 4) return true
+        }
+        return false
     }
 
     private fun checkNutAdvantage(holeCards: HoleCards, communityCards: List<Card>): Boolean {
