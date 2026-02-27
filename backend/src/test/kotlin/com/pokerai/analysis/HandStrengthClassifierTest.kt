@@ -353,4 +353,37 @@ class HandStrengthClassifierTest {
         val result = HandStrengthClassifier.analyze(hole("Ks", "7c"), board("Kd", "7h", "2s"))
         assertTrue(result.madeHand)
     }
+
+    // ========== Paired Board Tests ==========
+
+    @Test
+    fun `paired board top pair strong kicker is strong`() {
+        // KJs on 9h Jc 9s — top pair jacks, king kicker
+        val result = HandStrengthClassifier.analyze(hole("Js", "Ks"), board("9h", "Jc", "9s"))
+        assertEquals(HandStrengthTier.STRONG, result.tier)
+        assertTrue(result.madeHandDescription.contains("top pair"), result.madeHandDescription)
+    }
+
+    @Test
+    fun `paired board top pair weak kicker is medium`() {
+        // J2 on 9h Jc 9s — top pair jacks, 2 kicker
+        val result = HandStrengthClassifier.analyze(hole("Jd", "2c"), board("9h", "Jc", "9s"))
+        assertEquals(HandStrengthTier.MEDIUM, result.tier)
+    }
+
+    @Test
+    fun `paired board bottom pair is weak`() {
+        // K6 on 9h Jc 9s 6h — bottom pair sixes
+        val result = HandStrengthClassifier.analyze(hole("6d", "Kc"), board("9h", "Jc", "9s", "6h"))
+        assertEquals(HandStrengthTier.WEAK, result.tier)
+        assertTrue(result.madeHandDescription.contains("bottom pair"), result.madeHandDescription)
+    }
+
+    @Test
+    fun `paired board second pair is medium`() {
+        // 9dKs on Jc Jh 9s — second pair nines on J-J board
+        val result = HandStrengthClassifier.analyze(hole("9d", "Ks"), board("Jc", "Jh", "9s"))
+        assertEquals(HandStrengthTier.MEDIUM, result.tier)
+        assertTrue(result.madeHandDescription.contains("second pair"), result.madeHandDescription)
+    }
 }

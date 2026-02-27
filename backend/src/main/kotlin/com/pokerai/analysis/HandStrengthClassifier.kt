@@ -118,9 +118,12 @@ object HandStrengthClassifier {
             else HandStrengthTier.WEAK
         }
 
-        // If one pair is on the board and the player matches the other, it's vulnerable
+        // If one pair is on the board, the player's real contribution is a single pair
         if (boardPairs.any { it in twoPairRanks }) {
-            return HandStrengthTier.MEDIUM
+            val playerPairRank = twoPairRanks.first { it !in boardPairs }
+            val holeRanksList = holeCards.toList().map { it.rank.value }.sortedDescending()
+            val boardRanks = communityCards.map { it.rank.value }.sortedDescending()
+            return classifyBoardPair(playerPairRank, holeRanksList, boardRanks)
         }
 
         // Both hole cards contribute to the two pair
@@ -289,7 +292,27 @@ object HandStrengthClassifier {
             HandRank.TWO_PAIR -> {
                 val high = evaluation.kickers[0]
                 val low = evaluation.kickers[1]
-                "two pair, ${rankName(high).lowercase()}s and ${rankName(low).lowercase()}s"
+                val boardRankCounts = communityCards.groupBy { it.rank.value }
+                val boardPairsDesc = boardRankCounts.filter { it.value.size >= 2 }.keys
+                val twoPairRanksDesc = setOf(high, low)
+
+                if (boardPairsDesc.any { it in twoPairRanksDesc }
+                    && !boardPairsDesc.containsAll(twoPairRanksDesc)
+                ) {
+                    val playerPairRank = twoPairRanksDesc.first { it !in boardPairsDesc }
+                    val kicker = holeRanks.first { it != playerPairRank }
+                    val sortedBoardUnique = boardRanks.distinct().sortedDescending()
+                    when {
+                        playerPairRank == boardRanks.max() ->
+                            "top pair, ${rankName(kicker).lowercase()} kicker"
+                        sortedBoardUnique.size >= 2 && playerPairRank == sortedBoardUnique[1] ->
+                            "second pair, ${rankName(playerPairRank).lowercase()}s"
+                        else ->
+                            "bottom pair, ${rankName(playerPairRank).lowercase()}s"
+                    }
+                } else {
+                    "two pair, ${rankName(high).lowercase()}s and ${rankName(low).lowercase()}s"
+                }
             }
 
             HandRank.ONE_PAIR -> {
