@@ -109,6 +109,8 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── FACING A RAISE (our bet was raised) ──────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising — I have the nuts!")
                 HandStrengthTier.MONSTER ->
                     callAction(ctx, 0.9, "calling the raise — I have a big hand")
                 HandStrengthTier.STRONG ->
@@ -128,6 +130,8 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── FACING A BET ─────────────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising — I have the nuts!")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 80)
                         raiseAction(ctx, p.raiseMultiplier, 0.7, "raising! I have a great hand!")
@@ -160,6 +164,8 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ───────────────────────────────────────────────────
         return when (tier) {
+            HandStrengthTier.NUTS ->
+                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts — even I bet this")
             HandStrengthTier.MONSTER -> {
                 if (instinct > 55)
                     betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster — want to build the pot")
@@ -191,6 +197,8 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ──────────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising turn — I have the nuts!")
                 HandStrengthTier.MONSTER -> callAction(ctx, 0.9, "calling turn raise with monster")
                 HandStrengthTier.STRONG -> callAction(ctx, 0.75, "calling turn raise — my hand is good")
                 HandStrengthTier.MEDIUM -> {
@@ -210,6 +218,8 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── FACING A BET ────────────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising turn — I have the nuts!")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 75)
                         raiseAction(ctx, p.raiseMultiplier, 0.65, "raising turn with monster")
@@ -240,6 +250,8 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ──────────────────────────────────────────────────
         return when (tier) {
+            HandStrengthTier.NUTS ->
+                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts on turn")
             HandStrengthTier.MONSTER -> {
                 if (instinct > 50)
                     betAction(ctx, p.betSizePotFraction, 0.55, "betting monster on turn")
@@ -266,6 +278,8 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ──────────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising river — I have the nuts!")
                 HandStrengthTier.MONSTER -> callAction(ctx, 0.9, "calling river raise with monster")
                 HandStrengthTier.STRONG -> callAction(ctx, 0.7, "calling river raise — I have a good hand")
                 HandStrengthTier.MEDIUM -> {
@@ -280,6 +294,8 @@ class CallingStationStrategy : ArchetypeStrategy {
         // ── FACING A BET ────────────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising river — I have the nuts!")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 65)
                         raiseAction(ctx, p.raiseMultiplier, 0.6, "raising river with a monster!")
@@ -312,6 +328,8 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ON THE RIVER ─────────────────────────────────────
         return when (tier) {
+            HandStrengthTier.NUTS ->
+                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts on the river")
             HandStrengthTier.MONSTER -> {
                 if (ctx.closesAction || instinct > 40)
                     betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster on the river")

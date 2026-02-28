@@ -1,6 +1,7 @@
 package com.pokerai.analysis
 
 enum class HandStrengthTier {
+    NUTS,
     MONSTER,
     STRONG,
     MEDIUM,

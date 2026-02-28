@@ -54,12 +54,12 @@ object HandStrengthClassifier {
         }
 
         return when (evaluation.rank) {
-            HandRank.ROYAL_FLUSH, HandRank.STRAIGHT_FLUSH, HandRank.FOUR_OF_A_KIND,
+            HandRank.ROYAL_FLUSH, HandRank.STRAIGHT_FLUSH, HandRank.FOUR_OF_A_KIND -> HandStrengthTier.NUTS
             HandRank.FULL_HOUSE -> HandStrengthTier.MONSTER
 
-            HandRank.FLUSH -> classifyFlush(holeCards, fourFlushSuit)
+            HandRank.FLUSH -> classifyFlush(holeCards, fourFlushSuit, communityCards)
 
-            HandRank.STRAIGHT -> HandStrengthTier.MONSTER
+            HandRank.STRAIGHT -> classifyStraight(evaluation, communityCards)
 
             HandRank.THREE_OF_A_KIND -> classifyThreeOfAKind(evaluation, holeCards, communityCards)
             HandRank.TWO_PAIR -> classifyTwoPair(evaluation, holeCards, communityCards)
@@ -70,10 +70,21 @@ object HandStrengthClassifier {
 
     private fun classifyFlush(
         holeCards: HoleCards,
-        fourFlushSuit: Suit?
+        fourFlushSuit: Suit?,
+        communityCards: List<Card>
     ): HandStrengthTier {
-        // No 4-flush on board — player made a flush using 2+ hole cards, always strong
-        if (fourFlushSuit == null) return HandStrengthTier.MONSTER
+        val boardPaired = communityCards.groupBy { it.rank }.any { it.value.size >= 2 }
+
+        // No 4-flush on board — player made a flush using 2+ hole cards
+        if (fourFlushSuit == null) {
+            if (!boardPaired) {
+                val allCards = holeCards.toList() + communityCards
+                val flushSuit = allCards.groupBy { it.suit }.entries.first { it.value.size >= 5 }.key
+                val highestFlushCard = allCards.filter { it.suit == flushSuit }.maxOf { it.rank.value }
+                if (highestFlushCard == Rank.ACE.value) return HandStrengthTier.NUTS
+            }
+            return HandStrengthTier.MONSTER
+        }
 
         // 4-flush on board: strength depends on the player's highest hole card of that suit
         val holeFlushCards = holeCards.toList().filter { it.suit == fourFlushSuit }
@@ -85,7 +96,9 @@ object HandStrengthClassifier {
 
         val highestHoleFlush = holeFlushCards.maxOf { it.rank.value }
         return when {
-            highestHoleFlush >= Rank.ACE.value -> HandStrengthTier.MONSTER   // Nut flush
+            highestHoleFlush >= Rank.ACE.value -> {
+                if (!boardPaired) HandStrengthTier.NUTS else HandStrengthTier.MONSTER
+            }
             highestHoleFlush >= Rank.KING.value -> HandStrengthTier.STRONG   // Second-nut flush
             highestHoleFlush >= Rank.TEN.value -> HandStrengthTier.MEDIUM    // Decent flush
             else -> HandStrengthTier.WEAK                                     // Low flush, easily dominated
@@ -109,7 +122,53 @@ object HandStrengthClassifier {
         }
 
         // Player has a set (pocket pair + one on board) or trips (one in hand + two on board)
+        // Top set on a board with no straight/flush/full house possible → NUTS
+        if (holeCards.isPair) {
+            val boardPaired = boardRankCounts.any { it.value.size >= 2 }
+            if (!boardPaired) {
+                val hasFlushPotential = communityCards.groupBy { it.suit }.any { it.value.size >= 3 }
+                val hasStraightPotential = findNutStraightHighCard(communityCards) > 0
+                val highestBoardRank = communityCards.maxOf { it.rank.value }
+                if (!hasFlushPotential && !hasStraightPotential && tripRank == highestBoardRank) {
+                    return HandStrengthTier.NUTS
+                }
+            }
+        }
+
         return HandStrengthTier.MONSTER
+    }
+
+    private fun classifyStraight(
+        evaluation: HandEvaluation,
+        communityCards: List<Card>
+    ): HandStrengthTier {
+        val boardPaired = communityCards.groupBy { it.rank }.any { it.value.size >= 2 }
+        val hasFlushPotential = communityCards.groupBy { it.suit }.any { it.value.size >= 3 }
+
+        if (!boardPaired && !hasFlushPotential) {
+            val playerStraightHigh = evaluation.kickers[0]
+            if (playerStraightHigh == findNutStraightHighCard(communityCards)) {
+                return HandStrengthTier.NUTS
+            }
+        }
+
+        return HandStrengthTier.MONSTER
+    }
+
+    /**
+     * Find the highest possible straight high card given the community cards.
+     * Returns 0 if no straight is possible (board too disconnected for any 2 hole cards to complete one).
+     */
+    private fun findNutStraightHighCard(communityCards: List<Card>): Int {
+        val boardRanks = communityCards.map { it.rank.value }.distinct().toMutableSet()
+        if (14 in boardRanks) boardRanks.add(1) // ace can play low
+
+        for (highCard in 14 downTo 5) {
+            val straightRanks = ((highCard - 4)..highCard).toSet()
+            val missing = straightRanks - boardRanks
+            if (missing.size <= 2) return highCard
+        }
+        return 0
     }
 
     private fun classifyTwoPair(

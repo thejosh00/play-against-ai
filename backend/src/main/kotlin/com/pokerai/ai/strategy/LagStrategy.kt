@@ -180,6 +180,8 @@ class LagStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.95, "re-raising with the nuts — let's go")
                 HandStrengthTier.MONSTER -> {
                     raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.85, "re-raising with monster — let's go")
                 }
@@ -214,6 +216,8 @@ class LagStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.95, "raising the nuts — building the pot")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 35)
                         raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.8, "raising with monster — building the pot")
@@ -267,6 +271,9 @@ class LagStrategy : ArchetypeStrategy {
             val sizing = chooseSizing(ctx, tier >= HandStrengthTier.MEDIUM)
 
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, sizing, 0.95, "c-betting the nuts for value")
+                }
                 HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                     betAction(ctx, sizing, 0.85, "c-betting for value")
                 }
@@ -298,6 +305,10 @@ class LagStrategy : ArchetypeStrategy {
 
         // NOT the initiator — take stabs in position.
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                val sizing = chooseSizing(ctx, false)
+                betAction(ctx, sizing, 0.95, "betting the nuts after opponent checked")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 val sizing = chooseSizing(ctx, false)
                 betAction(ctx, sizing, 0.7, "betting for value after opponent checked")
@@ -341,6 +352,8 @@ class LagStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.95, "re-raising turn with the nuts")
                 HandStrengthTier.MONSTER ->
                     raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.8, "re-raising turn with monster")
                 HandStrengthTier.STRONG ->
@@ -362,6 +375,8 @@ class LagStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.95, "raising turn with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 40)
                         raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.75, "raising turn for value with monster")
@@ -407,6 +422,9 @@ class LagStrategy : ArchetypeStrategy {
             val sizing = chooseSizing(ctx, tier >= HandStrengthTier.MEDIUM)
 
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, sizing, 0.95, "double barreling the nuts")
+                }
                 HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                     betAction(ctx, sizing, 0.8, "double barreling for value")
                 }
@@ -440,6 +458,9 @@ class LagStrategy : ArchetypeStrategy {
 
         // Not the aggressor — checked to us on the turn.
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, false), 0.95, "betting the nuts on turn")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 betAction(ctx, chooseSizing(ctx, false), 0.7, "betting turn for value")
             }
@@ -474,6 +495,8 @@ class LagStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.95, "re-raising river with the nuts")
                 HandStrengthTier.MONSTER ->
                     callAction(ctx, 0.85, "calling river raise with monster")
                 HandStrengthTier.STRONG -> {
@@ -488,6 +511,8 @@ class LagStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.95, "raising river with the nuts — max value")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 30)
                         raiseAction(ctx, chooseLagRaiseSizing(ctx), 0.75, "raising river for max value")
@@ -532,6 +557,10 @@ class LagStrategy : ArchetypeStrategy {
         // ── CHECKED TO (TRIPLE BARREL / VALUE BET / BLUFF) ───────
         if (ctx.isInitiator || ctx.isAggressor) {
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    val sizing = p.betSizePotFraction * 1.2
+                    betAction(ctx, sizing, 0.95, "river value bet with the nuts")
+                }
                 HandStrengthTier.MONSTER -> {
                     val sizing = p.betSizePotFraction * 1.1
                     betAction(ctx, sizing, 0.85, "river value bet with monster")
@@ -572,6 +601,9 @@ class LagStrategy : ArchetypeStrategy {
 
         // Not the aggressor — checked to on the river.
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, p.betSizePotFraction * 1.2, 0.95, "value betting river with the nuts")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 betAction(ctx, p.betSizePotFraction, 0.7, "value betting river")
             }

@@ -102,7 +102,8 @@ class NitStrategy : ArchetypeStrategy {
     }
 
     private fun upgradeTier(tier: HandStrengthTier): HandStrengthTier = when (tier) {
-        HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
+        HandStrengthTier.NUTS -> HandStrengthTier.NUTS
+        HandStrengthTier.MONSTER -> HandStrengthTier.NUTS
         HandStrengthTier.STRONG -> HandStrengthTier.MONSTER
         HandStrengthTier.MEDIUM -> HandStrengthTier.STRONG
         HandStrengthTier.WEAK -> HandStrengthTier.MEDIUM
@@ -110,6 +111,7 @@ class NitStrategy : ArchetypeStrategy {
     }
 
     private fun downgradeTier(tier: HandStrengthTier): HandStrengthTier = when (tier) {
+        HandStrengthTier.NUTS -> HandStrengthTier.NUTS
         HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
         HandStrengthTier.STRONG -> HandStrengthTier.MEDIUM
         HandStrengthTier.MEDIUM -> HandStrengthTier.WEAK
@@ -132,6 +134,7 @@ class NitStrategy : ArchetypeStrategy {
         val tier = ctx.hand.tier
         if (ctx.potType == PotType.THREE_WAY || ctx.potType == PotType.MULTIWAY) {
             return when (tier) {
+                HandStrengthTier.NUTS -> HandStrengthTier.NUTS
                 HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
                 HandStrengthTier.STRONG -> HandStrengthTier.MEDIUM
                 HandStrengthTier.MEDIUM -> HandStrengthTier.WEAK
@@ -154,6 +157,8 @@ class NitStrategy : ArchetypeStrategy {
         // ── FACING A RAISE (we bet/raised, opponent raised us back) ────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raise with the nuts — even I raise here")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 70) raiseAction(ctx, p.raiseMultiplier, 0.9, "re-raise with monster")
                     else callAction(ctx, 0.85, "call the raise — we have a monster")
@@ -170,6 +175,8 @@ class NitStrategy : ArchetypeStrategy {
         // ── FACING A BET (opponent bet, we haven't acted aggressively yet) ──
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 60)
                         raiseAction(ctx, p.raiseMultiplier, 0.85, "raising for value with monster")
@@ -244,6 +251,8 @@ class NitStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising turn with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 60) raiseAction(ctx, p.raiseMultiplier, 0.85, "re-raising turn with monster")
                     else callAction(ctx, 0.8, "calling turn raise with monster")
@@ -260,6 +269,8 @@ class NitStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising turn with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 50)
                         raiseAction(ctx, p.raiseMultiplier, 0.8, "raising turn with monster")
@@ -329,6 +340,8 @@ class NitStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising river with the nuts")
                 HandStrengthTier.MONSTER -> callAction(ctx, 0.9, "calling river raise with monster")
                 else -> foldAction(0.95, "folding to river raise — they always have it")
             }
@@ -337,6 +350,8 @@ class NitStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising river with the nuts")
                 HandStrengthTier.MONSTER -> callAction(ctx, 0.95, "easy call with monster on river")
                 HandStrengthTier.STRONG -> {
                     if (ctx.betAsFractionOfPot <= p.postFlopCallCeiling
@@ -366,6 +381,9 @@ class NitStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ────────────────────────────────────────────────
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts on river")
+            }
             HandStrengthTier.MONSTER -> {
                 val sizing = p.betSizePotFraction * 0.8
                 betAction(ctx, sizing, 0.85, "value betting monster — slightly undersized")

@@ -248,6 +248,8 @@ class SharkStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 50)
                         raiseAction(ctx, p.raiseMultiplier, 0.7, "re-raising for value — unbalancing slightly")
@@ -281,6 +283,9 @@ class SharkStrategy : ArchetypeStrategy {
             // CHECK-RAISE decision: the shark's signature move on the flop.
             if (isGoodCheckRaiseSpot(ctx)) {
                 when (tier) {
+                    HandStrengthTier.NUTS -> {
+                        return raiseAction(ctx, p.raiseMultiplier, 0.95, "check-raising the nuts")
+                    }
                     HandStrengthTier.MONSTER -> {
                         if (instinct > 45)
                             return raiseAction(ctx, p.raiseMultiplier, 0.55, "check-raising monster for value")
@@ -299,6 +304,8 @@ class SharkStrategy : ArchetypeStrategy {
 
             // Standard facing-bet logic
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising the nuts for value")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 60)
                         raiseAction(ctx, p.raiseMultiplier, 0.65, "raising for value")
@@ -338,7 +345,7 @@ class SharkStrategy : ArchetypeStrategy {
         // ── CHECKED TO ────────────────────────────────────────────
 
         // TRAP decision: check a strong hand to induce a bluff?
-        if (shouldTrap(ctx) && tier <= HandStrengthTier.STRONG) {
+        if (shouldTrap(ctx) && tier <= HandStrengthTier.STRONG && tier >= HandStrengthTier.MONSTER) {
             if (instinct in 30..65) {
                 return checkAction(0.4, "trapping — checking strong hand to induce opponent's bluff")
             }
@@ -357,6 +364,9 @@ class SharkStrategy : ArchetypeStrategy {
             val sizing = chooseSizing(ctx, false)
 
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, sizing, 0.95, "c-betting the nuts for value")
+                }
                 HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                     betAction(ctx, sizing, 0.75, "c-betting for value")
                 }
@@ -388,6 +398,9 @@ class SharkStrategy : ArchetypeStrategy {
 
         // NOT the initiator
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, false), 0.95, "betting the nuts for value")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 if (shouldTrap(ctx) && instinct in 30..60) {
                     checkAction(0.35, "trapping — checking strong hand as non-initiator")
@@ -433,6 +446,8 @@ class SharkStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising turn with the nuts")
                 HandStrengthTier.MONSTER ->
                     if (instinct > 45) raiseAction(ctx, p.raiseMultiplier, 0.7, "re-raising turn monster")
                     else callAction(ctx, 0.75, "calling turn raise with monster")
@@ -455,6 +470,8 @@ class SharkStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising turn with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 40)
                         raiseAction(ctx, p.raiseMultiplier, 0.65, "raising turn for value")
@@ -501,6 +518,9 @@ class SharkStrategy : ArchetypeStrategy {
             }
 
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, sizing, 0.95, "betting the nuts on turn")
+                }
                 HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                     betAction(ctx, sizing, 0.7, if (delayedCbet) "delayed c-bet for value" else "double barrel for value")
                 }
@@ -535,6 +555,9 @@ class SharkStrategy : ArchetypeStrategy {
 
         // Not the aggressor, not delayed c-bet
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, false), 0.95, "betting the nuts on turn")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 val oppIsAggressive = ctx.opponents.firstOrNull()?.let {
                     it.playerType in listOf(OpponentType.LOOSE_AGGRESSIVE, OpponentType.TIGHT_AGGRESSIVE)
@@ -566,6 +589,8 @@ class SharkStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising river with the nuts")
                 HandStrengthTier.MONSTER -> callAction(ctx, 0.8, "calling river raise with monster")
                 HandStrengthTier.STRONG -> {
                     if (instinct > 45 && ctx.board.wetness <= BoardWetness.SEMI_WET)
@@ -579,6 +604,8 @@ class SharkStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising river with the nuts — max value")
                 HandStrengthTier.MONSTER -> {
                     raiseAction(ctx, p.raiseMultiplier, 0.7, "raising river for max value")
                 }
@@ -616,6 +643,11 @@ class SharkStrategy : ArchetypeStrategy {
         // ── CHECKED TO ────────────────────────────────────────────
         if (ctx.isInitiator || ctx.isAggressor) {
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    val sizing = if (polarizedSpot) chooseSizing(ctx, true)
+                        else chooseSizing(ctx, false) * 1.1
+                    betAction(ctx, sizing, 0.95, "river value bet with the nuts")
+                }
                 HandStrengthTier.MONSTER -> {
                     val sizing = if (polarizedSpot && instinct > 50) {
                         chooseSizing(ctx, true)
@@ -671,6 +703,9 @@ class SharkStrategy : ArchetypeStrategy {
 
         // Not the aggressor — checked to on river
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, polarizedSpot), 0.95, "value betting river with the nuts")
+            }
             HandStrengthTier.MONSTER -> {
                 betAction(ctx, chooseSizing(ctx, polarizedSpot), 0.65, "value betting river")
             }

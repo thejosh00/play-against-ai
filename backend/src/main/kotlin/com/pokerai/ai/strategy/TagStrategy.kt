@@ -130,6 +130,7 @@ class TagStrategy : ArchetypeStrategy {
         val tier = ctx.hand.tier
         if (ctx.potType == PotType.MULTIWAY) {
             return when (tier) {
+                HandStrengthTier.NUTS -> HandStrengthTier.NUTS
                 HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
                 HandStrengthTier.STRONG -> HandStrengthTier.STRONG
                 HandStrengthTier.MEDIUM -> HandStrengthTier.WEAK
@@ -139,6 +140,7 @@ class TagStrategy : ArchetypeStrategy {
         }
         if (ctx.potType == PotType.THREE_WAY) {
             return when (tier) {
+                HandStrengthTier.NUTS -> HandStrengthTier.NUTS
                 HandStrengthTier.MONSTER -> HandStrengthTier.MONSTER
                 HandStrengthTier.STRONG -> HandStrengthTier.STRONG
                 HandStrengthTier.MEDIUM -> HandStrengthTier.MEDIUM
@@ -206,6 +208,7 @@ class TagStrategy : ArchetypeStrategy {
 
         // Hand strength correlation (the TAG's sizing tell — subtle)
         val strengthModifier = when (tier) {
+            HandStrengthTier.NUTS -> 1.15          // biggest sizing with the nuts
             HandStrengthTier.MONSTER -> 1.05      // slightly bigger with monsters
             HandStrengthTier.STRONG -> 1.0        // standard with strong
             HandStrengthTier.MEDIUM -> 0.9        // slightly smaller with medium
@@ -228,6 +231,8 @@ class TagStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 45)
                         raiseAction(ctx, p.raiseMultiplier, 0.8, "re-raising with monster")
@@ -255,6 +260,8 @@ class TagStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising the nuts for value")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 40)
                         raiseAction(ctx, p.raiseMultiplier, 0.75, "raising for value with monster")
@@ -291,6 +298,9 @@ class TagStrategy : ArchetypeStrategy {
             val sizing = chooseSizing(ctx, tier)
 
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, sizing, 0.95, "c-betting the nuts for value")
+                }
                 HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                     betAction(ctx, sizing, 0.8, "c-betting for value")
                 }
@@ -322,6 +332,9 @@ class TagStrategy : ArchetypeStrategy {
 
         // NOT the initiator — checked to us.
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, tier), 0.95, "betting the nuts for value")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 betAction(ctx, chooseSizing(ctx, tier), 0.65, "betting for value")
             }
@@ -358,6 +371,8 @@ class TagStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising turn with the nuts")
                 HandStrengthTier.MONSTER ->
                     raiseAction(ctx, p.raiseMultiplier, 0.8, "re-raising turn with monster")
                 HandStrengthTier.STRONG -> {
@@ -380,6 +395,8 @@ class TagStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising turn with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 40)
                         raiseAction(ctx, p.raiseMultiplier, 0.75, "raising turn with monster")
@@ -411,6 +428,9 @@ class TagStrategy : ArchetypeStrategy {
             val sizing = chooseSizing(ctx, tier)
 
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, sizing, 0.95, "double barreling the nuts")
+                }
                 HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                     betAction(ctx, sizing, 0.75, "double barreling for value")
                 }
@@ -444,6 +464,9 @@ class TagStrategy : ArchetypeStrategy {
 
         // Not the aggressor — checked to us on the turn.
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, tier), 0.95, "betting the nuts on turn")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 betAction(ctx, chooseSizing(ctx, tier), 0.65, "betting turn for value")
             }
@@ -470,6 +493,8 @@ class TagStrategy : ArchetypeStrategy {
         // ── FACING A RAISE ────────────────────────────────────────
         if (ctx.facingRaise) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising river with the nuts")
                 HandStrengthTier.MONSTER -> callAction(ctx, 0.85, "calling river raise with monster")
                 HandStrengthTier.STRONG -> {
                     if (instinct > 60 && ctx.board.wetness <= BoardWetness.SEMI_WET)
@@ -483,6 +508,8 @@ class TagStrategy : ArchetypeStrategy {
         // ── FACING A BET ──────────────────────────────────────────
         if (ctx.facingBet) {
             return when (tier) {
+                HandStrengthTier.NUTS ->
+                    raiseAction(ctx, p.raiseMultiplier, 0.95, "raising river with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 35)
                         raiseAction(ctx, p.raiseMultiplier, 0.7, "raising river for value")
@@ -519,6 +546,9 @@ class TagStrategy : ArchetypeStrategy {
         // ── CHECKED TO ────────────────────────────────────────────
         if (ctx.isInitiator || ctx.isAggressor) {
             return when (tier) {
+                HandStrengthTier.NUTS -> {
+                    betAction(ctx, chooseSizing(ctx, tier) * 1.1, 0.95, "river value bet with the nuts")
+                }
                 HandStrengthTier.MONSTER -> {
                     betAction(ctx, chooseSizing(ctx, tier) * 1.05, 0.8, "river value bet with monster")
                 }
@@ -571,6 +601,9 @@ class TagStrategy : ArchetypeStrategy {
 
         // Not the aggressor — checked to on the river.
         return when (tier) {
+            HandStrengthTier.NUTS -> {
+                betAction(ctx, chooseSizing(ctx, tier), 0.95, "value betting river with the nuts")
+            }
             HandStrengthTier.MONSTER, HandStrengthTier.STRONG -> {
                 betAction(ctx, chooseSizing(ctx, tier), 0.6, "value betting river")
             }

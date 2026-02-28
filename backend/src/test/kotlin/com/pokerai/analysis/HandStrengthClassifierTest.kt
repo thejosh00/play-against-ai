@@ -12,6 +12,66 @@ class HandStrengthClassifierTest {
     private fun hole(c1: String, c2: String) = HoleCards(card(c1), card(c2))
     private fun board(vararg notations: String) = notations.map { card(it) }
 
+    // ========== NUTS Tier Tests ==========
+
+    @Test
+    fun `four of a kind is nuts`() {
+        val result = HandStrengthClassifier.analyze(hole("7s", "7c"), board("7d", "7h", "2s"))
+        assertEquals(HandStrengthTier.NUTS, result.tier)
+        assertTrue(result.madeHandDescription.contains("four of a kind"), result.madeHandDescription)
+        assertTrue(result.madeHand)
+    }
+
+    @Test
+    fun `straight flush is nuts`() {
+        val result = HandStrengthClassifier.analyze(hole("9h", "Th"), board("Jh", "Qh", "Kh"))
+        assertEquals(HandStrengthTier.NUTS, result.tier)
+        assertTrue(result.madeHand)
+    }
+
+    @Test
+    fun `royal flush is nuts`() {
+        val result = HandStrengthClassifier.analyze(hole("Ah", "Kh"), board("Qh", "Jh", "Th"))
+        assertEquals(HandStrengthTier.NUTS, result.tier)
+        assertTrue(result.madeHandDescription.contains("royal flush"), result.madeHandDescription)
+        assertTrue(result.madeHand)
+    }
+
+    @Test
+    fun `top set on disconnected board is nuts`() {
+        // KK on K♠ 7♥ 2♦ — board unpaired (before set), no flush (3 suits), no straight possible
+        val result = HandStrengthClassifier.analyze(hole("Ks", "Kc"), board("Kd", "7h", "2s"))
+        assertEquals(HandStrengthTier.NUTS, result.tier)
+    }
+
+    @Test
+    fun `non-nut straight on safe board is monster`() {
+        // 4-5 on 5♦ 6♥ 7♠ 8♣ 9♦ — 9-high straight is the nut, player has 8-high → MONSTER
+        val result = HandStrengthClassifier.analyze(hole("4s", "5c"), board("5d", "6h", "7s", "8c", "9d"))
+        assertEquals(HandStrengthTier.MONSTER, result.tier)
+    }
+
+    @Test
+    fun `nut straight on flush-possible board is monster`() {
+        // 7♠ 8♣ on 5♥ 6♥ 9♥ — nut straight but 3 hearts on board → flush possible → MONSTER
+        val result = HandStrengthClassifier.analyze(hole("7s", "8c"), board("5h", "6h", "9h"))
+        assertEquals(HandStrengthTier.MONSTER, result.tier)
+    }
+
+    @Test
+    fun `ace high flush on paired board is monster`() {
+        // A♥ 9♥ on K♥ K♠ 5♥ 3♥ — ace-high flush but board is paired → full house possible → MONSTER
+        val result = HandStrengthClassifier.analyze(hole("Ah", "9h"), board("Kh", "Ks", "5h", "3h"))
+        assertEquals(HandStrengthTier.MONSTER, result.tier)
+    }
+
+    @Test
+    fun `non-ace flush on unpaired board is monster`() {
+        // K♥ 9♥ on Q♥ 5♥ 3♥ — king-high flush, not ace-high → MONSTER
+        val result = HandStrengthClassifier.analyze(hole("Kh", "9h"), board("Qh", "5h", "3h"))
+        assertEquals(HandStrengthTier.MONSTER, result.tier)
+    }
+
     // ========== MONSTER Tier Tests ==========
 
     @Test
@@ -31,17 +91,17 @@ class HandStrengthClassifierTest {
     }
 
     @Test
-    fun `made flush is monster`() {
+    fun `ace high flush on unpaired board is nuts`() {
         val result = HandStrengthClassifier.analyze(hole("Ah", "9h"), board("Kh", "5h", "3h"))
-        assertEquals(HandStrengthTier.MONSTER, result.tier)
+        assertEquals(HandStrengthTier.NUTS, result.tier)
         assertTrue(result.madeHandDescription.contains("flush"), result.madeHandDescription)
         assertTrue(result.madeHand)
     }
 
     @Test
-    fun `made straight is monster`() {
+    fun `nut straight on safe board is nuts`() {
         val result = HandStrengthClassifier.analyze(hole("7s", "8c"), board("5d", "6h", "9s"))
-        assertEquals(HandStrengthTier.MONSTER, result.tier)
+        assertEquals(HandStrengthTier.NUTS, result.tier)
         assertTrue(result.madeHandDescription.contains("straight"), result.madeHandDescription)
         assertTrue(result.madeHand)
     }
@@ -235,9 +295,9 @@ class HandStrengthClassifierTest {
     }
 
     @Test
-    fun `river made hand unaffected by former draws`() {
+    fun `river ace high flush on unpaired board is nuts`() {
         val result = HandStrengthClassifier.analyze(hole("Ah", "9h"), board("Kh", "5h", "3c", "7d", "2h"))
-        assertEquals(HandStrengthTier.MONSTER, result.tier)
+        assertEquals(HandStrengthTier.NUTS, result.tier)
         assertTrue(result.draws.isEmpty())
     }
 
