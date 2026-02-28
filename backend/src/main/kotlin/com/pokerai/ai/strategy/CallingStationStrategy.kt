@@ -112,14 +112,14 @@ class CallingStationStrategy : ArchetypeStrategy {
                 HandStrengthTier.NUTS ->
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising — I have the nuts!")
                 HandStrengthTier.MONSTER ->
-                    callAction(ctx, 0.9, "calling the raise — I have a big hand")
+                    callAction(ctx, tier, 0.9, "calling the raise — I have a big hand")
                 HandStrengthTier.STRONG ->
-                    callAction(ctx, 0.8, "calling the raise — my hand is good")
+                    callAction(ctx, tier, 0.8, "calling the raise — my hand is good")
                 HandStrengthTier.MEDIUM ->
-                    callAction(ctx, 0.6, "calling the raise — I have something")
+                    callAction(ctx, tier, 0.6, "calling the raise — I have something")
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.totalOuts >= 5 || instinct > 60)
-                        callAction(ctx, 0.4, "calling the raise with a draw")
+                        callAction(ctx, tier, 0.4, "calling the raise with a draw")
                     else foldAction(0.6, "raise is too much with this weak hand")
                 }
                 HandStrengthTier.NOTHING ->
@@ -135,26 +135,26 @@ class CallingStationStrategy : ArchetypeStrategy {
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 80)
                         raiseAction(ctx, p.raiseMultiplier, 0.7, "raising! I have a great hand!")
-                    else callAction(ctx, 0.95, "calling with a monster — don't want to scare them")
+                    else callAction(ctx, tier, 0.95, "calling with a monster — don't want to scare them")
                 }
                 HandStrengthTier.STRONG -> {
                     if (instinct > 90)
                         raiseAction(ctx, p.raiseMultiplier, 0.5, "raising with a strong hand — feeling bold")
-                    else callAction(ctx, 0.9, "calling with a strong hand")
+                    else callAction(ctx, tier, 0.9, "calling with a strong hand")
                 }
                 HandStrengthTier.MEDIUM -> {
-                    callAction(ctx, 0.85, "I have a medium strength hand — calling")
+                    callAction(ctx, tier, 0.85, "I have a medium strength hand — calling")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.madeHand || ctx.hand.totalOuts >= 4 || instinct > 45) {
-                        callAction(ctx, 0.7, "I have something — calling")
+                        callAction(ctx, tier, 0.7, "I have something — calling")
                     } else {
                         foldAction(0.6, "I really have nothing here")
                     }
                 }
                 HandStrengthTier.NOTHING -> {
                     if (instinct > 75) {
-                        callAction(ctx, 0.25, "maybe they're bluffing — I'll call with nothing")
+                        callAction(ctx, tier, 0.25, "maybe they're bluffing — I'll call with nothing")
                     } else {
                         foldAction(0.7, "I have absolutely nothing")
                     }
@@ -164,11 +164,14 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ───────────────────────────────────────────────────
         return when (tier) {
-            HandStrengthTier.NUTS ->
-                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts — even I bet this")
-            HandStrengthTier.MONSTER -> {
+            HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
                 if (instinct > 55)
-                    betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster — want to build the pot")
+                    if (Math.random() > 0.5) {
+                        // Betting much more than usual (reliable tell)
+                        betAction(ctx, p.betSizePotFraction * 1.8, 0.6, "finally have it — making a big bet")
+                    } else {
+                        betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster — want to build the pot")
+                    }
                 else checkAction(0.7, "checking my monster — someone will bet, then I'll call")
             }
             HandStrengthTier.STRONG -> {
@@ -199,16 +202,16 @@ class CallingStationStrategy : ArchetypeStrategy {
             return when (tier) {
                 HandStrengthTier.NUTS ->
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising turn — I have the nuts!")
-                HandStrengthTier.MONSTER -> callAction(ctx, 0.9, "calling turn raise with monster")
-                HandStrengthTier.STRONG -> callAction(ctx, 0.75, "calling turn raise — my hand is good")
+                HandStrengthTier.MONSTER -> callAction(ctx, tier, 0.9, "calling turn raise with monster")
+                HandStrengthTier.STRONG -> callAction(ctx, tier, 0.75, "calling turn raise — my hand is good")
                 HandStrengthTier.MEDIUM -> {
                     if (instinct > 50)
-                        callAction(ctx, 0.45, "calling turn raise — I have a pair")
+                        callAction(ctx, tier, 0.45, "calling turn raise — I have a pair")
                     else foldAction(0.55, "turn raise is scary even for me")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.totalOuts >= 8 && instinct > 55)
-                        callAction(ctx, 0.3, "calling turn raise with a draw")
+                        callAction(ctx, tier, 0.3, "calling turn raise with a draw")
                     else foldAction(0.65, "folding to turn raise")
                 }
                 HandStrengthTier.NOTHING -> foldAction(0.8, "nothing on the turn — folding to raise")
@@ -223,26 +226,26 @@ class CallingStationStrategy : ArchetypeStrategy {
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 75)
                         raiseAction(ctx, p.raiseMultiplier, 0.65, "raising turn with monster")
-                    else callAction(ctx, 0.9, "calling turn with monster")
+                    else callAction(ctx, tier, 0.9, "calling turn with monster")
                 }
                 HandStrengthTier.STRONG -> {
-                    callAction(ctx, 0.85, "calling turn with strong hand")
+                    callAction(ctx, tier, 0.85, "calling turn with strong hand")
                 }
                 HandStrengthTier.MEDIUM -> {
-                    callAction(ctx, 0.8, "I have a medium strength hand on the turn — calling")
+                    callAction(ctx, tier, 0.8, "I have a medium strength hand on the turn — calling")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.madeHand || ctx.hand.totalOuts >= 4 || instinct > 50) {
-                        callAction(ctx, 0.6, "calling turn — I have something")
+                        callAction(ctx, tier, 0.6, "calling turn — I have something")
                     } else if (instinct > 65) {
-                        callAction(ctx, 0.3, "calling turn with high card — they might be bluffing")
+                        callAction(ctx, tier, 0.3, "calling turn with high card — they might be bluffing")
                     } else {
                         foldAction(0.6, "weak hand on the turn — folding")
                     }
                 }
                 HandStrengthTier.NOTHING -> {
                     if (instinct > 80)
-                        callAction(ctx, 0.2, "calling with nothing — stubborn")
+                        callAction(ctx, tier, 0.2, "calling with nothing — stubborn")
                     else foldAction(0.75, "nothing on the turn — even I fold")
                 }
             }
@@ -250,11 +253,15 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ──────────────────────────────────────────────────
         return when (tier) {
-            HandStrengthTier.NUTS ->
-                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts on turn")
-            HandStrengthTier.MONSTER -> {
-                if (instinct > 50)
-                    betAction(ctx, p.betSizePotFraction, 0.55, "betting monster on turn")
+            HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
+                if (instinct > 50) {
+                    if (Math.random() > 0.5) {
+                        // Betting much more than usual (reliable tell)
+                        betAction(ctx, p.betSizePotFraction * 1.8, 0.55, "finally have it — making a big bet")
+                    } else {
+                        betAction(ctx, p.betSizePotFraction, 0.55, "betting monster on turn")
+                    }
+                }
                 else checkAction(0.65, "checking monster — trapping")
             }
             HandStrengthTier.STRONG -> {
@@ -280,11 +287,11 @@ class CallingStationStrategy : ArchetypeStrategy {
             return when (tier) {
                 HandStrengthTier.NUTS ->
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising river — I have the nuts!")
-                HandStrengthTier.MONSTER -> callAction(ctx, 0.9, "calling river raise with monster")
-                HandStrengthTier.STRONG -> callAction(ctx, 0.7, "calling river raise — I have a good hand")
+                HandStrengthTier.MONSTER -> callAction(ctx, tier, 0.9, "calling river raise with monster")
+                HandStrengthTier.STRONG -> callAction(ctx, tier, 0.7, "calling river raise — I have a good hand")
                 HandStrengthTier.MEDIUM -> {
                     if (instinct > 60)
-                        callAction(ctx, 0.35, "calling river raise — I can't fold a pair")
+                        callAction(ctx, tier, 0.35, "calling river raise — I can't fold a pair")
                     else foldAction(0.55, "river raise is too much")
                 }
                 else -> foldAction(0.75, "folding to river raise")
@@ -299,28 +306,28 @@ class CallingStationStrategy : ArchetypeStrategy {
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 65)
                         raiseAction(ctx, p.raiseMultiplier, 0.6, "raising river with a monster!")
-                    else callAction(ctx, 0.9, "calling river with monster")
+                    else callAction(ctx, tier, 0.9, "calling river with monster")
                 }
                 HandStrengthTier.STRONG -> {
-                    callAction(ctx, 0.85, "calling river — I have a strong hand")
+                    callAction(ctx, tier, 0.85, "calling river — I have a strong hand")
                 }
                 HandStrengthTier.MEDIUM -> {
-                    callAction(ctx, 0.75, "I have a pair — I call")
+                    callAction(ctx, tier, 0.75, "I have a pair — I call")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.madeHand) {
                         if (instinct > 30)
-                            callAction(ctx, 0.6, "I have a pair — have to call")
+                            callAction(ctx, tier, 0.6, "I have a pair — have to call")
                         else foldAction(0.4, "weak pair... maybe I should fold")
                     } else {
                         if (instinct > 80)
-                            callAction(ctx, 0.2, "missed my draw but maybe they're bluffing")
+                            callAction(ctx, tier, 0.2, "missed my draw but maybe they're bluffing")
                         else foldAction(0.7, "missed my draw — no more cards coming")
                     }
                 }
                 HandStrengthTier.NOTHING -> {
                     if (instinct > 85)
-                        callAction(ctx, 0.15, "calling with nothing — pure stubbornness")
+                        callAction(ctx, tier, 0.15, "calling with nothing — pure stubbornness")
                     else foldAction(0.8, "nothing on the river — have to fold")
                 }
             }
@@ -328,11 +335,15 @@ class CallingStationStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ON THE RIVER ─────────────────────────────────────
         return when (tier) {
-            HandStrengthTier.NUTS ->
-                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts on the river")
-            HandStrengthTier.MONSTER -> {
-                if (ctx.closesAction || instinct > 40)
-                    betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster on the river")
+            HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
+                if (ctx.closesAction || instinct > 40) {
+                    if (Math.random() > 0.5) {
+                        // Betting much more than usual (reliable tell)
+                        betAction(ctx, p.betSizePotFraction * 1.8, 0.6, "finally have it — making a big bet")
+                    } else {
+                        betAction(ctx, p.betSizePotFraction, 0.6, "betting my monster on the river")
+                    }
+                }
                 else checkAction(0.5, "checking monster — maybe they'll bet")
             }
             HandStrengthTier.STRONG -> {
@@ -373,8 +384,47 @@ class CallingStationStrategy : ArchetypeStrategy {
     private fun checkAction(confidence: Double, reasoning: String) =
         ActionDecision(Action.check(), confidence, reasoning)
 
-    private fun callAction(ctx: DecisionContext, confidence: Double, reasoning: String): ActionDecision {
-        return ActionDecision(Action.call(ctx.betToCall), confidence, reasoning)
+    private fun willCall(betFraction: Double, tier: HandStrengthTier): Boolean {
+        val threshold = when (tier) {
+            HandStrengthTier.NUTS -> 9999.0
+            HandStrengthTier.MONSTER -> 2.0
+            HandStrengthTier.STRONG -> 1.5
+            HandStrengthTier.MEDIUM -> 1.0
+            HandStrengthTier.WEAK -> 0.75
+            HandStrengthTier.NOTHING -> 0.0
+        }
+        return betFraction <= threshold
+    }
+
+    private fun callAction(ctx: DecisionContext, tier: HandStrengthTier, confidence: Double, reasoning: String): ActionDecision {
+        val betFraction = ctx.betAsFractionOfPot
+
+        if (willCall(betFraction, tier)) {
+            return ActionDecision(Action.call(ctx.betToCall), confidence, reasoning)
+        }
+
+        if (ctx.playerChips <= ctx.potSize) {
+            return ActionDecision(Action.call(ctx.betToCall), confidence, "$reasoning — pot-committed, have to call")
+        }
+
+        // Over threshold — check for curiosity call
+        val curiosityRate = when (tier) {
+            HandStrengthTier.MONSTER -> 0.65
+            HandStrengthTier.STRONG -> 0.50
+            HandStrengthTier.MEDIUM -> 0.25
+            HandStrengthTier.WEAK -> 0.20
+            else -> 0.0
+        }
+
+        if (Math.random() < curiosityRate) {
+            return ActionDecision(
+                Action.call(ctx.betToCall),
+                confidence,
+                "$reasoning — that's too big, must be a bluff"
+            )
+        }
+
+        return foldAction(confidence, "bet is too big for my hand")
     }
 
     private fun betAction(

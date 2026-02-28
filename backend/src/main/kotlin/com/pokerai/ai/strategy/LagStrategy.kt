@@ -650,8 +650,33 @@ class LagStrategy : ArchetypeStrategy {
         confidence: Double,
         reasoning: String
     ): ActionDecision {
+        adjustRaiseBasedOnBetSize(ctx, reasoning)?.let { return it }
+
         val raiseToAmount = (ctx.betToCall * multiplier).toInt()
             .coerceAtLeast(ctx.suggestedSizes.minRaise)
         return ActionDecision(Action.raise(raiseToAmount), confidence, reasoning)
+    }
+
+    private fun adjustRaiseBasedOnBetSize(ctx: DecisionContext, reasoning: String): ActionDecision? {
+        // Handle a Bluff. LAG range is polarized, they don't turn medium hands into bluffs
+        if (ctx.hand.tier == HandStrengthTier.NOTHING || ctx.hand.tier == HandStrengthTier.WEAK) {
+            if (ctx.sprAfterCall < 0.5) {
+                return foldAction(0.95, "$reasoning - not enough chips left behind to bluff")
+            }
+        } else {
+            if (ctx.betAsFractionOfPot > 1.0 && ctx.hand.tier != HandStrengthTier.NUTS) {
+                if (ctx.playerChips <= ctx.potSize) {
+                    return ActionDecision(Action.allIn(ctx.playerChips), 0.4, "$reasoning — big bet but i'm pot-committed")
+                }
+
+                if (Math.random() < 0.5) {
+                    return foldAction(0.6, "$reasoning - really big bet, I think they have it")
+                }
+                return callAction(ctx, 0.6, "$reasoning - slow down and just call overbet")
+            }
+        }
+
+        // no adjustment
+        return null
     }
 }

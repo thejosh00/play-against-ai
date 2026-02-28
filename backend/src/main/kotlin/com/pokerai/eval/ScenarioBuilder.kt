@@ -231,7 +231,11 @@ object ScenarioBuilder {
                 potOdds = potOdds,
                 betAsFractionOfPot = betFraction,
                 spr = spr,
+                sprAfterCall = if (betToCall > 0 && potSize + betToCall > 0)
+                    (effectiveStack - betToCall).coerceAtLeast(0).toDouble() / (potSize + betToCall)
+                else spr,
                 effectiveStack = effectiveStack,
+                playerChips = effectiveStack,
                 suggestedSizes = BetSizes(
                     thirdPot = potSize / 3,
                     halfPot = potSize / 2,

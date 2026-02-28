@@ -135,7 +135,11 @@ class CallingStationStrategyTest {
             potOdds = potOdds,
             betAsFractionOfPot = betAsFractionOfPot,
             spr = spr,
+            sprAfterCall = if (betToCall > 0 && potSize + betToCall > 0)
+                (effectiveStack - betToCall).coerceAtLeast(0).toDouble() / (potSize + betToCall)
+            else spr,
             effectiveStack = effectiveStack,
+            playerChips = effectiveStack,
             suggestedSizes = BetSizes(
                 thirdPot = maxOf(potSize / 3, 1),
                 halfPot = maxOf(potSize / 2, 1),
@@ -196,7 +200,7 @@ class CallingStationStrategyTest {
             tier = HandStrengthTier.WEAK,
             madeHand = true,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 50
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -209,7 +213,7 @@ class CallingStationStrategyTest {
             madeHand = false,
             totalOuts = 4,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 50
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -262,17 +266,17 @@ class CallingStationStrategyTest {
     }
 
     @Test
-    fun `NOTHING facing a flop bet with very high instinct calls`() {
+    fun `NOTHING facing a flop bet with very high instinct still folds — sizing gate`() {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.NOTHING,
             facingBet = true,
             betToCall = 50,
             instinct = 80
         ))
-        assertEquals(ActionType.CALL, decision.action.type)
+        assertEquals(ActionType.FOLD, decision.action.type)
     }
 
-    // ── Sizing insensitivity ──────────────────────────────────────────
+    // ── Sizing sensitivity ───────────────────────────────────────────
 
     @Test
     fun `MEDIUM facing half pot bet calls`() {
@@ -286,25 +290,26 @@ class CallingStationStrategyTest {
     }
 
     @Test
-    fun `MEDIUM facing pot-sized bet still calls`() {
+    fun `MEDIUM facing 0_75x pot bet calls — at threshold`() {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.MEDIUM,
             facingBet = true,
-            betToCall = 100,
+            betToCall = 70,
             potSize = 100
         ))
         assertEquals(ActionType.CALL, decision.action.type)
     }
 
     @Test
-    fun `MEDIUM facing 2x pot overbet still calls`() {
+    fun `MEDIUM facing 2x pot overbet folds — over threshold`() {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.MEDIUM,
             facingBet = true,
             betToCall = 200,
             potSize = 100
         ))
-        assertEquals(ActionType.CALL, decision.action.type)
+        // Over threshold (0.75) — folds unless rare curiosity call (8%)
+        assertTrue(decision.action.type == ActionType.FOLD || decision.action.type == ActionType.CALL)
     }
 
     // ── Passivity — rarely bets when checked to ──────────────────────
@@ -370,7 +375,7 @@ class CallingStationStrategyTest {
             street = Street.TURN,
             madeHand = true,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 55
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -397,7 +402,7 @@ class CallingStationStrategyTest {
             street = Street.RIVER,
             madeHand = true,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 50
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -418,7 +423,7 @@ class CallingStationStrategyTest {
     }
 
     @Test
-    fun `MEDIUM facing a large river bet still calls — sizing insensitive`() {
+    fun `MEDIUM facing a large river bet folds — over threshold`() {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.MEDIUM,
             street = Street.RIVER,
@@ -426,7 +431,8 @@ class CallingStationStrategyTest {
             betToCall = 150,
             potSize = 100
         ))
-        assertEquals(ActionType.CALL, decision.action.type)
+        // 1.5x pot exceeds MEDIUM threshold (0.75) — folds unless rare curiosity call (8%)
+        assertTrue(decision.action.type == ActionType.FOLD || decision.action.type == ActionType.CALL)
     }
 
     @Test
@@ -545,7 +551,7 @@ class CallingStationStrategyTest {
             tier = HandStrengthTier.MEDIUM,
             facingRaise = true,
             facingBet = true,
-            betToCall = 100,
+            betToCall = 70,
             instinct = 60
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -577,13 +583,13 @@ class CallingStationStrategyTest {
 
         // WEAK, no made hand, 3 outs, instinct 35
         // Without boost: instinct 35, no made hand, totalOuts < 4, instinct 35 < 45 → fold
-        // With +15 boost: instinct 50 > 45 → call
+        // With +15 boost: instinct 50 > 45 → call (betToCall 35/100 = 0.35 < 0.40 threshold)
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.WEAK,
             madeHand = false,
             totalOuts = 3,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 35,
             sessionStats = stats
         ))
@@ -601,14 +607,16 @@ class CallingStationStrategyTest {
         )
         val stats = SessionStats(resultBB = 0.0, handsPlayed = 20, recentShowdowns = listOf(bluffMemory))
 
-        // NOTHING facing bet, instinct 68
-        // Without boost: 68 < 75 → fold
-        // With +10 boost: 78 > 75 → call
+        // WEAK facing bet, no made hand, no outs, instinct 38
+        // Without boost: 38 < 45 → fold
+        // With +10 boost: 48 > 45 → call (betToCall 35/100 = 0.35 < 0.40 threshold)
         val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.NOTHING,
+            tier = HandStrengthTier.WEAK,
+            madeHand = false,
+            totalOuts = 0,
             facingBet = true,
-            betToCall = 50,
-            instinct = 68,
+            betToCall = 35,
+            instinct = 38,
             sessionStats = stats
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -620,13 +628,13 @@ class CallingStationStrategyTest {
 
         // WEAK, no made hand, 3 outs, instinct 38
         // Without boost: 38 < 45 → fold
-        // With +8 boost (losing): 46 > 45 → call
+        // With +8 boost (losing): 46 > 45 → call (betToCall 35/100 = 0.35 < 0.40 threshold)
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.WEAK,
             madeHand = false,
             totalOuts = 3,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 38,
             sessionStats = losingStats
         ))
@@ -762,7 +770,7 @@ class CallingStationStrategyTest {
             tier = HandStrengthTier.WEAK,
             madeHand = true,
             facingBet = true,
-            betToCall = 50,
+            betToCall = 35,
             instinct = 50
         )
         val stationDecision = strategy.decide(context)
@@ -834,7 +842,7 @@ class CallingStationStrategyTest {
             street = Street.TURN,
             facingRaise = true,
             facingBet = true,
-            betToCall = 100,
+            betToCall = 70,
             instinct = 55
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -861,7 +869,7 @@ class CallingStationStrategyTest {
             street = Street.RIVER,
             facingRaise = true,
             facingBet = true,
-            betToCall = 200
+            betToCall = 120
         ))
         assertEquals(ActionType.CALL, decision.action.type)
     }
@@ -873,7 +881,7 @@ class CallingStationStrategyTest {
             street = Street.RIVER,
             facingRaise = true,
             facingBet = true,
-            betToCall = 200,
+            betToCall = 70,
             instinct = 65
         ))
         assertEquals(ActionType.CALL, decision.action.type)

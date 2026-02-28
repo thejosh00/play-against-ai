@@ -159,13 +159,13 @@ class NitStrategy : ArchetypeStrategy {
             return when (tier) {
                 HandStrengthTier.NUTS ->
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raise with the nuts — even I raise here")
-                HandStrengthTier.MONSTER -> {
+                HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
                     if (instinct > 70) raiseAction(ctx, p.raiseMultiplier, 0.9, "re-raise with monster")
-                    else callAction(ctx, 0.85, "call the raise — we have a monster")
+                    else callAction(ctx, tier, 0.85, "call the raise — we have a monster")
                 }
                 HandStrengthTier.STRONG -> {
                     if (instinct > 80 && ctx.board.wetness <= BoardWetness.SEMI_WET)
-                        callAction(ctx, 0.35, "hero call on dry board")
+                        callAction(ctx, tier, 0.35, "hero call on dry board")
                     else foldAction(0.8, "folding strong hand to flop raise")
                 }
                 else -> foldAction(0.95, "easy fold to flop raise")
@@ -180,21 +180,21 @@ class NitStrategy : ArchetypeStrategy {
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 60)
                         raiseAction(ctx, p.raiseMultiplier, 0.85, "raising for value with monster")
-                    else callAction(ctx, 0.9, "slowplaying monster — just call")
+                    else callAction(ctx, tier, 0.9, "slowplaying monster — just call")
                 }
                 HandStrengthTier.STRONG -> {
                     if (ctx.betAsFractionOfPot <= p.postFlopCallCeiling)
-                        callAction(ctx, 0.75, "calling with strong hand")
+                        callAction(ctx, tier, 0.75, "calling with strong hand")
                     else foldAction(0.65, "bet too large for comfort even with strong hand")
                 }
                 HandStrengthTier.MEDIUM -> {
                     if (ctx.betAsFractionOfPot <= 0.5)
-                        callAction(ctx, 0.5, "reluctant call with medium hand")
+                        callAction(ctx, tier, 0.5, "reluctant call with medium hand")
                     else foldAction(0.7, "medium hand can't handle this sizing")
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.totalOuts >= 8 && instinct > 65 && hasDecentOdds(ctx))
-                        callAction(ctx, 0.3, "chasing a draw against better judgment")
+                        callAction(ctx, tier, 0.3, "chasing a draw against better judgment")
                     else foldAction(0.9, "folding weak hand to bet")
                 }
                 HandStrengthTier.NOTHING -> foldAction(0.98, "nothing — easy fold")
@@ -204,27 +204,29 @@ class NitStrategy : ArchetypeStrategy {
         // ── CHECKED TO (we can bet or check) ────────────────────────────
         return when {
             ctx.isInitiator && tier <= HandStrengthTier.STRONG -> {
-                betAction(ctx, p.betSizePotFraction, 0.8, "c-bet with strong+ hand")
+                if (tier == HandStrengthTier.MONSTER || tier == HandStrengthTier.NUTS && Math.random() < 0.5) {
+                    // Betting much smaller than usual (reliable tell)
+                    betAction(ctx, p.betSizePotFraction * 0.7, 0.8, "small c-bet with monster (I really really want a call)")
+                } else {
+                    betAction(ctx, p.betSizePotFraction, 0.8, "c-bet with strong+ hand")
+                }
             }
             ctx.isInitiator && tier == HandStrengthTier.MEDIUM -> {
                 val cbetFreq = 1.0 - p.postFlopCheckProb
                 if (shouldAct(cbetFreq, instinct)) {
-                    val sizing = if (ctx.board.wetness <= BoardWetness.SEMI_WET)
-                        p.betSizePotFraction
-                    else p.betSizePotFraction * 0.6
-                    betAction(ctx, sizing, 0.5, "c-bet with medium hand")
+                    betAction(ctx, p.betSizePotFraction, 0.5, "c-bet with medium hand")
                 } else {
                     checkAction(0.6, "checking medium hand — not confident enough to bet")
                 }
             }
             ctx.isInitiator && tier == HandStrengthTier.WEAK -> {
                 if (ctx.board.wetness <= BoardWetness.DRY && instinct > 85)
-                    betAction(ctx, p.betSizePotFraction * 0.6, 0.25, "dry board bluff c-bet")
+                    betAction(ctx, p.betSizePotFraction, 0.25, "dry board bluff c-bet")
                 else checkAction(0.9, "giving up with weak hand")
             }
             ctx.isInitiator && tier == HandStrengthTier.NOTHING -> {
                 if (ctx.board.wetness <= BoardWetness.DRY && instinct > 90)
-                    betAction(ctx, p.betSizePotFraction * 0.5, 0.2, "rare air c-bet on dry board")
+                    betAction(ctx, p.betSizePotFraction, 0.2, "rare air c-bet on dry board")
                 else checkAction(0.95, "no hand, no bet")
             }
 
@@ -255,11 +257,11 @@ class NitStrategy : ArchetypeStrategy {
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising turn with the nuts")
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 60) raiseAction(ctx, p.raiseMultiplier, 0.85, "re-raising turn with monster")
-                    else callAction(ctx, 0.8, "calling turn raise with monster")
+                    else callAction(ctx, tier, 0.8, "calling turn raise with monster")
                 }
                 HandStrengthTier.STRONG -> {
                     if (ctx.board.wetness <= BoardWetness.DRY && instinct > 80)
-                        callAction(ctx, 0.3, "painful call — dry board gives me hope")
+                        callAction(ctx, tier, 0.3, "painful call — dry board gives me hope")
                     else foldAction(0.85, "can't handle the turn raise")
                 }
                 else -> foldAction(0.95, "folding to turn raise")
@@ -274,14 +276,14 @@ class NitStrategy : ArchetypeStrategy {
                 HandStrengthTier.MONSTER -> {
                     if (instinct > 50)
                         raiseAction(ctx, p.raiseMultiplier, 0.8, "raising turn with monster")
-                    else callAction(ctx, 0.9, "calling — want to keep them in")
+                    else callAction(ctx, tier, 0.9, "calling — want to keep them in")
                 }
                 HandStrengthTier.STRONG -> {
                     if (ctx.betAsFractionOfPot <= p.postFlopCallCeiling) {
-                        callAction(ctx, 0.6, "calling turn with strong hand — uncomfortable though")
+                        callAction(ctx, tier, 0.6, "calling turn with strong hand — uncomfortable though")
                     } else {
                         if (ctx.board.wetness <= BoardWetness.DRY && instinct > 60)
-                            callAction(ctx, 0.35, "calling big turn bet on dry board")
+                            callAction(ctx, tier, 0.35, "calling big turn bet on dry board")
                         else foldAction(0.7, "turn bet too big — folding strong hand")
                     }
                 }
@@ -290,14 +292,14 @@ class NitStrategy : ArchetypeStrategy {
                         && ctx.board.wetness <= BoardWetness.SEMI_WET
                         && instinct > 60
                     ) {
-                        callAction(ctx, 0.25, "small bet on safe board — reluctant call")
+                        callAction(ctx, tier, 0.25, "small bet on safe board — reluctant call")
                     } else {
                         foldAction(0.75, "folding medium hand on turn — there will be better spots")
                     }
                 }
                 HandStrengthTier.WEAK -> {
                     if (ctx.hand.totalOuts >= 8 && hasDecentOdds(ctx) && instinct > 70)
-                        callAction(ctx, 0.2, "drawing on the turn — probably a mistake")
+                        callAction(ctx, tier, 0.2, "drawing on the turn — probably a mistake")
                     else foldAction(0.95, "folding weak hand on turn")
                 }
                 HandStrengthTier.NOTHING -> foldAction(0.98, "nothing on the turn — done")
@@ -307,18 +309,24 @@ class NitStrategy : ArchetypeStrategy {
         // ── CHECKED TO ────────────────────────────────────────────────
         return when {
             ctx.isInitiator && tier <= HandStrengthTier.STRONG -> {
-                betAction(ctx, p.betSizePotFraction, 0.75, "double barrel with strong hand")
+                if (tier == HandStrengthTier.MONSTER || tier == HandStrengthTier.NUTS && Math.random() < 0.5) {
+                    // Betting much smaller than usual (reliable tell)
+                    betAction(ctx, p.betSizePotFraction * 0.7, 0.8, "small double barrel with monster (I don't want to scare anyone away)"
+                    )
+                } else {
+                    betAction(ctx, p.betSizePotFraction, 0.75, "double barrel with strong hand")
+                }
             }
             ctx.isInitiator && tier == HandStrengthTier.MEDIUM -> {
                 if (instinct > 80 && !ctx.board.flushCompletedThisStreet && !ctx.board.straightCompletedThisStreet) {
-                    betAction(ctx, p.betSizePotFraction * 0.7, 0.3, "trying to barrel turn — undersizing")
+                    betAction(ctx, p.betSizePotFraction, 0.3, "trying to barrel turn")
                 } else {
                     checkAction(0.8, "giving up on turn with medium hand")
                 }
             }
             ctx.isInitiator && tier == HandStrengthTier.WEAK && ctx.hand.totalOuts >= 12 -> {
                 if (instinct > 80)
-                    betAction(ctx, p.betSizePotFraction * 0.7, 0.25, "semi-bluff with big draw")
+                    betAction(ctx, p.betSizePotFraction, 0.25, "semi-bluff with big draw")
                 else checkAction(0.75, "checking big draw — scared to barrel")
             }
             !ctx.isInitiator && tier <= HandStrengthTier.STRONG -> {
@@ -342,7 +350,7 @@ class NitStrategy : ArchetypeStrategy {
             return when (tier) {
                 HandStrengthTier.NUTS ->
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "re-raising river with the nuts")
-                HandStrengthTier.MONSTER -> callAction(ctx, 0.9, "calling river raise with monster")
+                HandStrengthTier.MONSTER -> callAction(ctx, tier, 0.9, "calling river raise with monster")
                 else -> foldAction(0.95, "folding to river raise — they always have it")
             }
         }
@@ -352,18 +360,18 @@ class NitStrategy : ArchetypeStrategy {
             return when (tier) {
                 HandStrengthTier.NUTS ->
                     raiseAction(ctx, p.raiseMultiplier, 0.95, "raising river with the nuts")
-                HandStrengthTier.MONSTER -> callAction(ctx, 0.95, "easy call with monster on river")
+                HandStrengthTier.MONSTER -> callAction(ctx, tier, 0.95, "easy call with monster on river")
                 HandStrengthTier.STRONG -> {
                     if (ctx.betAsFractionOfPot <= p.postFlopCallCeiling
                         && !ctx.board.flushCompletedThisStreet
                         && !ctx.board.straightCompletedThisStreet
                     ) {
                         if (instinct > 70)
-                            callAction(ctx, 0.45, "hero call — board is safe and their line is suspect")
-                        else callAction(ctx, 0.55, "calling river with strong hand")
+                            callAction(ctx, tier, 0.45, "hero call — board is safe and their line is suspect")
+                        else callAction(ctx, tier, 0.55, "calling river with strong hand")
                     } else if (ctx.betAsFractionOfPot > 0.75) {
                         if (ctx.board.wetness <= BoardWetness.DRY && instinct > 75)
-                            callAction(ctx, 0.25, "painful call against big river bet on dry board")
+                            callAction(ctx, tier, 0.25, "painful call against big river bet on dry board")
                         else foldAction(0.8, "big river bet — folding strong hand")
                     } else {
                         foldAction(0.7, "river is scary — folding strong hand")
@@ -371,7 +379,7 @@ class NitStrategy : ArchetypeStrategy {
                 }
                 HandStrengthTier.MEDIUM -> {
                     if (ctx.betAsFractionOfPot <= 0.33 && instinct > 75)
-                        callAction(ctx, 0.2, "tiny river bet — maybe they're bluffing")
+                        callAction(ctx, tier, 0.2, "tiny river bet — maybe they're bluffing")
                     else foldAction(0.85, "folding medium hand on river")
                 }
                 HandStrengthTier.WEAK -> foldAction(0.98, "folding weak hand on river")
@@ -381,12 +389,13 @@ class NitStrategy : ArchetypeStrategy {
 
         // ── CHECKED TO ────────────────────────────────────────────────
         return when (tier) {
-            HandStrengthTier.NUTS -> {
-                betAction(ctx, p.betSizePotFraction, 0.95, "betting the nuts on river")
-            }
-            HandStrengthTier.MONSTER -> {
-                val sizing = p.betSizePotFraction * 0.8
-                betAction(ctx, sizing, 0.85, "value betting monster — slightly undersized")
+            HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
+                if (Math.random() < 0.5) {
+                    // Betting much smaller than usual (reliable tell)
+                    betAction(ctx, p.betSizePotFraction * 0.7, 0.85, "small river bet with monster (please please call me)")
+                } else {
+                    betAction(ctx, p.betSizePotFraction, 0.85, "value betting monster")
+                }
             }
             HandStrengthTier.STRONG -> {
                 if (ctx.board.wetness <= BoardWetness.SEMI_WET
@@ -394,8 +403,7 @@ class NitStrategy : ArchetypeStrategy {
                     && !ctx.board.straightCompletedThisStreet
                     && instinct > 55
                 ) {
-                    val sizing = p.betSizePotFraction * 0.65
-                    betAction(ctx, sizing, 0.4, "thin value bet — might check this back normally")
+                    betAction(ctx, p.betSizePotFraction, 0.4, "thin value bet — might check this back normally")
                 } else {
                     checkAction(0.7, "checking back strong hand — scared of check-raise")
                 }
@@ -408,7 +416,7 @@ class NitStrategy : ArchetypeStrategy {
                     && ctx.board.wetness <= BoardWetness.SEMI_WET
                     && ctx.hand.hasNutAdvantage
                 ) {
-                    betAction(ctx, p.betSizePotFraction * 0.7, 0.15, "rare river bluff — have a blocker")
+                    betAction(ctx, p.betSizePotFraction, 0.15, "rare river bluff — have a blocker")
                 } else {
                     checkAction(0.98, "checking back — not bluffing")
                 }
@@ -449,8 +457,45 @@ class NitStrategy : ArchetypeStrategy {
     private fun checkAction(confidence: Double, reasoning: String) =
         ActionDecision(Action.check(), confidence, reasoning)
 
-    private fun callAction(ctx: DecisionContext, confidence: Double, reasoning: String): ActionDecision {
-        return ActionDecision(Action.call(ctx.betToCall), confidence, reasoning)
+    private fun willCall(betFraction: Double, tier: HandStrengthTier): Boolean {
+        val threshold = when (tier) {
+            HandStrengthTier.NUTS -> 9999.0
+            HandStrengthTier.MONSTER -> 2.0
+            HandStrengthTier.STRONG -> 0.75
+            HandStrengthTier.MEDIUM -> 0.33
+            HandStrengthTier.WEAK -> 0.15
+            HandStrengthTier.NOTHING -> 0.0
+        }
+        return betFraction <= threshold
+    }
+
+    private fun callAction(ctx: DecisionContext, tier: HandStrengthTier, confidence: Double, reasoning: String): ActionDecision {
+        val betFraction = ctx.betAsFractionOfPot
+
+        if (willCall(betFraction, tier)) {
+            return ActionDecision(Action.call(ctx.betToCall), confidence, reasoning)
+        }
+
+        if (ctx.playerChips <= ctx.potSize) {
+            return ActionDecision(Action.call(ctx.betToCall), confidence, "$reasoning — pot-committed, have to call")
+        }
+
+        // Over threshold — check for curiosity call
+        val curiosityRate = when (tier) {
+            HandStrengthTier.MONSTER -> 0.10
+            HandStrengthTier.STRONG -> 0.03
+            else -> 0.0
+        }
+
+        if (Math.random() < curiosityRate) {
+            return ActionDecision(
+                Action.call(ctx.betToCall),
+                confidence * 0.5,
+                "$reasoning — that's too big, must be a bluff"
+            )
+        }
+
+        return foldAction(confidence * 0.3, "bet is too big for my hand")
     }
 
     private fun betAction(

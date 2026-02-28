@@ -135,7 +135,11 @@ class LagStrategyTest {
             potOdds = potOdds,
             betAsFractionOfPot = betAsFractionOfPot,
             spr = spr,
+            sprAfterCall = if (betToCall > 0 && potSize + betToCall > 0)
+                (effectiveStack - betToCall).coerceAtLeast(0).toDouble() / (potSize + betToCall)
+            else spr,
             effectiveStack = effectiveStack,
+            playerChips = effectiveStack,
             suggestedSizes = BetSizes(
                 thirdPot = maxOf(potSize / 3, 1),
                 halfPot = maxOf(potSize / 2, 1),

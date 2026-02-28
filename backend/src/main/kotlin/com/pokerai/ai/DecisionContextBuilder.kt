@@ -90,7 +90,11 @@ object DecisionContextBuilder {
             potOdds = if (betToCall > 0) betToCall.toDouble() / (state.pot + betToCall) else 0.0,
             betAsFractionOfPot = if (betToCall > 0 && state.pot > 0) betToCall.toDouble() / state.pot else 0.0,
             spr = if (state.pot > 0) effectiveStack.toDouble() / state.pot else 99.0,
+            sprAfterCall = if (betToCall > 0 && state.pot + betToCall > 0)
+                (effectiveStack - betToCall).coerceAtLeast(0).toDouble() / (state.pot + betToCall)
+            else if (state.pot > 0) effectiveStack.toDouble() / state.pot else 99.0,
             effectiveStack = effectiveStack,
+            playerChips = player.chips,
             suggestedSizes = BetSizes(
                 thirdPot = maxOf(state.pot / 3, 1),
                 halfPot = maxOf(state.pot / 2, 1),

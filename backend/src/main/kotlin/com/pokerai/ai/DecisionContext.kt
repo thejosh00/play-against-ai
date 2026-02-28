@@ -40,7 +40,9 @@ data class DecisionContext(
     val potOdds: Double,
     val betAsFractionOfPot: Double,
     val spr: Double,
+    val sprAfterCall: Double,
     val effectiveStack: Int,
+    val playerChips: Int,
     val suggestedSizes: BetSizes,
 
     // Situation

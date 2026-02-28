@@ -134,7 +134,11 @@ class NitStrategyTest {
             potOdds = potOdds,
             betAsFractionOfPot = betAsFractionOfPot,
             spr = spr,
+            sprAfterCall = if (betToCall > 0 && potSize + betToCall > 0)
+                (effectiveStack - betToCall).coerceAtLeast(0).toDouble() / (potSize + betToCall)
+            else spr,
             effectiveStack = effectiveStack,
+            playerChips = effectiveStack,
             suggestedSizes = BetSizes(
                 thirdPot = maxOf(potSize / 3, 1),
                 halfPot = maxOf(potSize / 2, 1),
@@ -250,16 +254,17 @@ class NitStrategyTest {
 
     @Test
     fun `flop WEAK with draw and decent odds calls`() {
-        // 9 outs on the flop, pot = 100, betToCall = 25
-        // potOdds = 25/125 = 0.20
+        // 9 outs on the flop, pot = 100, betToCall = 14
+        // potOdds = 14/114 = 0.123
         // drawProb = 9/47 = 0.191, * 1.3 comfort = 0.249
-        // 0.20 <= 0.249 → decent odds
+        // 0.123 <= 0.249 → decent odds
+        // betFraction = 14/100 = 0.14 < WEAK threshold 0.15
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.WEAK,
             facingBet = true,
             totalOuts = 9,
             instinct = 70,
-            betToCall = 25,
+            betToCall = 14,
             potSize = 100
         ))
         assertEquals(ActionType.CALL, decision.action.type)
@@ -636,9 +641,9 @@ class NitStrategyTest {
             betSizePotFraction = 0.50
         ))
         assertEquals(ActionType.RAISE, decision.action.type)
-        // Expected: pot * 0.50 * 0.65 = 32.5 → 32, coerced to minRaise(20)
-        assertTrue(decision.action.amount in 20..40,
-            "Thin value bet should be ~32, got ${decision.action.amount}")
+        // pot * 0.50 = 50
+        assertEquals(50, decision.action.amount,
+            "Thin value bet should be 50, got ${decision.action.amount}")
     }
 
     @Test
@@ -855,7 +860,7 @@ class NitStrategyTest {
     }
 
     @Test
-    fun `medium hand bets smaller on wet board`() {
+    fun `medium hand c-bets at standard sizing`() {
         // Need to set instinct so shouldAct always returns true
         // Use very high instinct to ensure the bet happens
         val decision = strategy.decide(ctx(
@@ -869,14 +874,14 @@ class NitStrategyTest {
             postFlopCheckProb = 0.01 // almost always bets
         ))
         if (decision.action.type == ActionType.RAISE) {
-            // On wet board: 0.50 * 0.6 = 0.30 → 30
-            assertTrue(decision.action.amount <= 35,
-                "Medium hand on wet board should bet small, got ${decision.action.amount}")
+            // pot * 0.50 = 50
+            assertEquals(50, decision.action.amount,
+                "Medium hand c-bet should be 50, got ${decision.action.amount}")
         }
     }
 
     @Test
-    fun `river monster bets slightly undersized`() {
+    fun `river monster bets with sizing tell`() {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.MONSTER,
             street = Street.RIVER,
@@ -885,12 +890,13 @@ class NitStrategyTest {
             potSize = 100
         ))
         assertEquals(ActionType.RAISE, decision.action.type)
-        // pot * 0.50 * 0.8 = 40
-        assertEquals(40, decision.action.amount)
+        // 50/50 between pot * 0.50 * 0.7 = 35 and pot * 0.50 = 50
+        assertTrue(decision.action.amount in 35..50,
+            "Monster river bet should be 35 or 50, got ${decision.action.amount}")
     }
 
     @Test
-    fun `river thin value bet significantly undersized`() {
+    fun `river thin value bet at full sizing`() {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.STRONG,
             street = Street.RIVER,
@@ -903,8 +909,8 @@ class NitStrategyTest {
             straightCompletedThisStreet = false
         ))
         assertEquals(ActionType.RAISE, decision.action.type)
-        // pot * 0.50 * 0.65 = 32
-        assertEquals(32, decision.action.amount)
+        // pot * 0.50 = 50
+        assertEquals(50, decision.action.amount)
     }
 
     // ── Draw odds ───────────────────────────────────────────────────
@@ -912,13 +918,14 @@ class NitStrategyTest {
     @Test
     fun `weak hand with strong draw and decent odds calls on flop`() {
         // 12 outs on flop: drawProb = 12/47 = 0.255, * 1.3 = 0.332
-        // potOdds = 20/120 = 0.167, which is <= 0.332 → decent odds
+        // potOdds = 14/114 = 0.123, which is <= 0.332 → decent odds
+        // betFraction = 14/100 = 0.14 < WEAK threshold 0.15
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.WEAK,
             facingBet = true,
             totalOuts = 12,
             instinct = 70,
-            betToCall = 20,
+            betToCall = 14,
             potSize = 100,
             street = Street.FLOP
         ))
@@ -1147,12 +1154,12 @@ class NitStrategyTest {
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.MEDIUM,
             facingBet = true,
-            betToCall = 45,
+            betToCall = 30,
             potSize = 100,
             instinct = 50,
             sessionStats = stats
         ))
-        // MEDIUM facing 45% pot → calls (< 0.5 threshold), bluff memory doesn't hurt
+        // MEDIUM facing 30% pot → calls (< 0.33 threshold and < 0.5 code gate), bluff memory doesn't hurt
         assertEquals(ActionType.CALL, decision.action.type)
     }
 
@@ -1256,12 +1263,12 @@ class NitStrategyTest {
         val lpRead = opponentRead(playerType = OpponentType.LOOSE_PASSIVE)
 
         // Flop WEAK facing small bet → normally folds (no draw)
-        // With LP: WEAK upgrades to MEDIUM → calls small bet (< 0.5)
+        // With LP: WEAK upgrades to MEDIUM → calls small bet (< 0.33 threshold)
         val decision = strategy.decide(ctx(
             tier = HandStrengthTier.WEAK,
             street = Street.FLOP,
             facingBet = true,
-            betToCall = 40,
+            betToCall = 30,
             potSize = 100,
             instinct = 50,
             bettorRead = lpRead
@@ -1353,14 +1360,14 @@ class NitStrategyTest {
         )
         val stats = SessionStats(resultBB = 0.0, handsPlayed = 20, recentShowdowns = listOf(bluffMemory))
 
-        // River STRONG facing big bet (>ceiling), dry board
+        // River MEDIUM facing tiny bet (≤ 0.33), instinct gate at 75
         // modifier = +8 (specific bluffer only, handsAgo=8 skips general showdown check)
-        // instinct 68 + 8 = 76 > 75 → painful call
+        // instinct 68 + 8 = 76 > 75 → curiosity call
         val decision = strategy.decide(ctx(
-            tier = HandStrengthTier.STRONG,
+            tier = HandStrengthTier.MEDIUM,
             street = Street.RIVER,
             facingBet = true,
-            betToCall = 90,
+            betToCall = 30,
             potSize = 100,
             instinct = 68,
             sessionStats = stats,
@@ -1370,10 +1377,10 @@ class NitStrategyTest {
 
         // Without bettor read: instinct stays 68 < 75 → fold
         val withoutBluffer = strategy.decide(ctx(
-            tier = HandStrengthTier.STRONG,
+            tier = HandStrengthTier.MEDIUM,
             street = Street.RIVER,
             facingBet = true,
-            betToCall = 90,
+            betToCall = 30,
             potSize = 100,
             instinct = 68,
             sessionStats = stats,
