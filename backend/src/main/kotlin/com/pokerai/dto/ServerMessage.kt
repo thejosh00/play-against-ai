@@ -123,6 +123,8 @@ fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null, opponentMo
         minOf(currentBetLevel - player.currentBet, player.chips).coerceAtLeast(0)
     } else 0
 
+    val allInRunout = activePlayers.size > 1 && bettingPlayers.size <= 1
+
     return ServerMessage.GameStateUpdate(
         phase = phase,
         communityCards = communityCards.map { CardDto.from(it) },
@@ -133,6 +135,7 @@ fun GameState.toUpdate(userIndex: Int = 0, gameLabel: String? = null, opponentMo
                 showAiCards -> true
                 phase == GamePhase.SHOWDOWN || phase == GamePhase.HAND_COMPLETE ->
                     player.index in showdownRevealedPlayers
+                allInRunout && !player.isFolded -> true
                 else -> false
             }
             PlayerDto(
