@@ -29,6 +29,14 @@ class PushFoldStrategy(private val random: Random = Random) {
 
         fun reasoning(detail: String) = "$hand, ${scenario.name.lowercase()}, cutoff=$cutoff, ${player.position.label}, $detail"
 
+        // Shove-call: if someone has already shoved preflop, decide whether to call
+        val shoveRecord = state.actionHistory.lastOrNull {
+            it.action.type == ActionType.ALL_IN && it.phase == GamePhase.PRE_FLOP
+        }
+        if (shoveRecord != null) {
+            return callShoveDecision(player, state, gameContext, tournamentState, archetype, profile, opponentModeler, shoveRecord)
+        }
+
         // Archetype-aware push/fold: shove or fold when short-stacked in unopened pots
         // BB defends rather than open-shoving
         if (bbCount <= archetype.shoveThreshold() && scenario == Scenario.OPEN && player.position != Position.BB) {
@@ -162,6 +170,161 @@ class PushFoldStrategy(private val random: Random = Random) {
     }
 
     private fun adjustmentFloor(limperCount: Int): Int = limperCount * 8
+
+    private fun callShoveDecision(
+        player: Player,
+        state: GameState,
+        gameContext: GameContext,
+        tournamentState: TournamentState?,
+        archetype: PlayerArchetype,
+        profile: PlayerProfile,
+        opponentModeler: OpponentModeler?,
+        shoveRecord: ActionRecord
+    ): AiDecision {
+        val holeCards = player.holeCards ?: error("AI player ${player.name} has no hole cards")
+        val hand = holeCards.notation
+        val shoverPlayer = state.players[shoveRecord.playerIndex]
+        val shoverType = opponentModeler?.getRead(shoverPlayer)?.playerType ?: OpponentType.UNKNOWN
+
+        val estimatedRange = estimateShoveRange(shoverPlayer, state, gameContext, shoverType)
+
+        val callAmount = state.currentBetLevel - player.currentBet
+        val allCurrentBets = state.players.sumOf { it.currentBet }
+        val potOdds = callAmount.toDouble() / (state.pot + allCurrentBets + callAmount)
+
+        val correctCallRange = (estimatedRange * potOddsToCallWidth(potOdds)).toInt()
+
+        // Archetype distortion
+        var adjustedRange = when (archetype) {
+            is CallingStationArchetype -> {
+                val flatRange = when {
+                    potOdds <= 0.25 -> 55
+                    potOdds <= 0.30 -> 45
+                    potOdds <= 0.35 -> 35
+                    else -> 25
+                }
+                val opponentAdj = if (shoverType == OpponentType.TIGHT_PASSIVE) -3 else 0
+                flatRange + opponentAdj
+            }
+            is NitArchetype -> {
+                val flatRange = when {
+                    potOdds <= 0.25 -> 18
+                    potOdds <= 0.30 -> 12
+                    potOdds <= 0.35 -> 8
+                    else -> 5
+                }
+                val opponentAdj = when (shoverType) {
+                    OpponentType.LOOSE_AGGRESSIVE -> 4
+                    OpponentType.LOOSE_PASSIVE -> 2
+                    OpponentType.TIGHT_PASSIVE -> -3
+                    OpponentType.TIGHT_AGGRESSIVE -> -2
+                    OpponentType.UNKNOWN -> 0
+                }
+                flatRange + opponentAdj
+            }
+            is TagArchetype -> {
+                val base = (correctCallRange * 0.85).toInt()
+                val opponentAdj = when (shoverType) {
+                    OpponentType.LOOSE_AGGRESSIVE -> 8
+                    OpponentType.LOOSE_PASSIVE -> 5
+                    OpponentType.TIGHT_PASSIVE -> -8
+                    OpponentType.TIGHT_AGGRESSIVE -> -5
+                    OpponentType.UNKNOWN -> 0
+                }
+                base + opponentAdj
+            }
+            is LagArchetype -> {
+                val base = (correctCallRange * 1.2).toInt()
+                val opponentAdj = when (shoverType) {
+                    OpponentType.LOOSE_AGGRESSIVE -> 12
+                    OpponentType.LOOSE_PASSIVE -> 6
+                    OpponentType.TIGHT_PASSIVE -> -8
+                    OpponentType.TIGHT_AGGRESSIVE -> -5
+                    OpponentType.UNKNOWN -> 0
+                }
+                base + opponentAdj
+            }
+            is SharkArchetype -> {
+                var base = correctCallRange
+                val opponentAdj = when (shoverType) {
+                    OpponentType.LOOSE_AGGRESSIVE -> 6
+                    OpponentType.LOOSE_PASSIVE -> 3
+                    OpponentType.TIGHT_PASSIVE -> -6
+                    OpponentType.TIGHT_AGGRESSIVE -> -4
+                    OpponentType.UNKNOWN -> 0
+                }
+                base += opponentAdj
+                if (gameContext.isTournament && gameContext.tournamentStage != null) {
+                    val pressure = icmPressure(gameContext.tournamentStage, player, state, tournamentState)
+                    base = (base * (1.0 - pressure * archetype.icmAwareness() * 0.4)).toInt()
+                }
+                base
+            }
+            else -> correctCallRange
+        }
+
+        adjustedRange += positionAdjustment(player, state)
+        adjustedRange = adjustedRange.coerceIn(1, HandRankings.PUSH_FOLD_RANKED_HANDS.size)
+
+        val pushFoldIndex = HandRankings.pushFoldIndexOf(hand)
+        val inRange = pushFoldIndex < adjustedRange
+        val fuzzIn = !inRange && pushFoldIndex < adjustedRange + PreFlopStrategy.FUZZ_BOUND && random.nextDouble() < profile.rangeFuzzProb
+
+        val reasoning = "$hand, shove-call, ${player.position.label}, range=$adjustedRange, potOdds=${String.format("%.0f%%", potOdds * 100)}, vs ${shoverPlayer.position.label}"
+
+        return if (inRange || fuzzIn) {
+            val action = if (callAmount >= player.chips || callAmount >= player.chips / 3) {
+                Action.allIn(player.chips)
+            } else {
+                Action.call(callAmount)
+            }
+            AiDecision(action, reasoning, "coded")
+        } else {
+            AiDecision(Action.fold(), reasoning, "coded")
+        }
+    }
+
+    private fun estimateShoveRange(
+        shoverPlayer: Player,
+        state: GameState,
+        gameContext: GameContext,
+        shoverType: OpponentType
+    ): Int {
+        val shoverBBs = (shoverPlayer.totalBetThisHand.toDouble() / state.bigBlind).toInt().coerceIn(1, 15)
+        val baseRange = if (gameContext.antesActive) {
+            PushFoldChart.getRangeWithAnte(shoverPlayer.position, shoverBBs)
+        } else {
+            PushFoldChart.getRange(shoverPlayer.position, shoverBBs)
+        }
+        val typeMultiplier = when (shoverType) {
+            OpponentType.LOOSE_AGGRESSIVE -> 1.3
+            OpponentType.TIGHT_AGGRESSIVE -> 0.8
+            OpponentType.LOOSE_PASSIVE -> 0.7
+            OpponentType.TIGHT_PASSIVE -> 0.5
+            OpponentType.UNKNOWN -> 1.0
+        }
+        return (baseRange * typeMultiplier).toInt().coerceIn(1, 169)
+    }
+
+    private fun potOddsToCallWidth(potOdds: Double): Double = when {
+        potOdds <= 0.20 -> 0.85
+        potOdds <= 0.25 -> 0.75
+        potOdds <= 0.30 -> 0.65
+        potOdds <= 0.35 -> 0.55
+        potOdds <= 0.40 -> 0.45
+        else -> 0.35
+    }
+
+    private fun positionAdjustment(player: Player, state: GameState): Int {
+        val playersLeftToAct = state.players.count {
+            it.index != player.index && it.isActive && !it.isAllIn
+        }
+        return when {
+            playersLeftToAct == 0 -> 5
+            playersLeftToAct == 1 -> 0
+            else -> -5
+        }
+    }
 
     private fun icmPressure(
         stage: TournamentStage,
