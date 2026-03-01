@@ -102,6 +102,45 @@ object HandRankings {
         "92o", "T3o", "T2o"
     )
 
+    // All 169 Hands ranked by the equity they have when shoving
+    val PUSH_FOLD_RANKED_HANDS: List<String> = listOf(
+        // Pairs dominate push/fold because guaranteed equity
+        "AA", "KK", "QQ", "JJ", "TT", "AKs",
+        "AKo", "99", "AQs", "AQo", "AJs",
+        "88", "ATs", "AJo", "KQs", "77",
+        "A9s", "ATo", "KJs", "KQo", "A8s",
+        "66", "KTs", "A7s", "A9o", "KJo",
+        "A5s", "A6s", "55", "A4s", "KTo",
+        "A8o", "A3s", "QJs", "K9s", "A2s",
+        "QTs", "A7o", "44", "K8s", "A6o",
+        "A5o", "JTs", "K7s", "QJo", "A4o",
+        "Q9s", "K9o", "K6s", "A3o", "33",
+        "J9s", "QTo", "A2o", "K5s", "T9s",
+        "K8o", "K4s", "Q8s", "K3s", "98s",
+        "K7o", "J8s", "22", "K2s", "T8s",
+        "K6o", "Q7s", "87s", "JTo", "Q9o",
+        "K5o", "76s", "Q6s", "97s", "J9o",
+        "K4o", "65s", "T9o", "86s", "K3o",
+        "Q5s", "J7s", "K2o", "54s", "Q8o",
+        "Q4s", "T7s", "96s", "J8o", "75s",
+        "98o", "Q3s", "64s", "87o", "Q2s",
+        "85s", "53s", "J6s", "T8o", "76o",
+        "Q7o", "43s", "97o", "J5s", "95s",
+        "74s", "Q6o", "86o", "65o", "T6s",
+        "J4s", "Q5o", "63s", "84s", "54o",
+        "92s", "J3s", "T7o", "96o", "Q4o",
+        "52s", "75o", "93s", "42s", "J2s",
+        "82s", "T5s", "Q3o", "73s", "64o",
+        "85o", "Q2o", "53o", "T4s", "J7o",
+        "32s", "94o", "43o", "J6o", "T3s",
+        "83o", "72s", "62s", "T2s", "J5o",
+        "74o", "84o", "J4o", "52o", "95o",
+        "T6o", "63o", "42o", "J3o", "93o",
+        "92o", "73o", "32o", "82o", "J2o",
+        "T5o", "62o", "72o", "T4o", "83o",
+        "T3o", "T2o"
+    )
+
     private val indexMap: Map<String, Int> = RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
     private val huIndexMap: Map<String, Int> = HU_RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
 
