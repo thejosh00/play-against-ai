@@ -64,6 +64,7 @@ data object TagArchetype : PlayerArchetype() {
     override fun shoveThreshold(): Int = 12
     override fun shoveRangeWidth(): Double = 0.8
     override fun icmAwareness(): Double = 0.9
+    override fun limperAwareness(): Double = 0.8
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:

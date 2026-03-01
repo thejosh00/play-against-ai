@@ -51,6 +51,7 @@ data object SharkArchetype : PlayerArchetype() {
     override fun shoveThreshold(): Int = 13
     override fun shoveRangeWidth(): Double = 0.9
     override fun icmAwareness(): Double = 1.0
+    override fun limperAwareness(): Double = 1.0
 
     override fun getOpenCutoff(position: Position): Int = when (position) {
         Position.UTG, Position.UTG1 -> 14

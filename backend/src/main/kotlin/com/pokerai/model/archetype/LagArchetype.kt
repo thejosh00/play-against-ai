@@ -69,6 +69,7 @@ data object LagArchetype : PlayerArchetype() {
     override fun shoveThreshold(): Int = 15
     override fun shoveRangeWidth(): Double = 1.3
     override fun icmAwareness(): Double = 0.4
+    override fun limperAwareness(): Double = 0.6
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:

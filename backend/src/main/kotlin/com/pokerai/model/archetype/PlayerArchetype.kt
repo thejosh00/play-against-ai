@@ -21,6 +21,7 @@ sealed class PlayerArchetype {
     abstract fun shoveThreshold(): Int
     abstract fun shoveRangeWidth(): Double
     abstract fun icmAwareness(): Double
+    abstract fun limperAwareness(): Double
 
     open fun getStrategy(): ArchetypeStrategy? = null
 

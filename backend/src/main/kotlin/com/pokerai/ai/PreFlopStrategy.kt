@@ -84,6 +84,13 @@ class PreFlopStrategy(private val random: Random = Random) {
                 }
                 adjustedRange = (adjustedRange * (1.0 + blindsAdj)).toInt()
             }
+            // Limper adjustment: dead money widens range, but callers tighten it
+            val limpers = findLimpers(state)
+            if (limpers.isNotEmpty()) {
+                val limperAdj = limperShoveAdjustment(limpers, bbCount, opponentModeler)
+                adjustedRange += (limperAdj * archetype.limperAwareness()).toInt()
+            }
+
             if (archetype is LagArchetype) adjustedRange = (adjustedRange * 1.1).toInt()
             if (archetype is NitArchetype) adjustedRange = (adjustedRange * 0.9).toInt()
 
@@ -320,6 +327,50 @@ class PreFlopStrategy(private val random: Random = Random) {
         Position.SB -> 1.05
         Position.BB -> 1.00
     }
+
+    private fun findLimpers(state: GameState): List<Player> {
+        val limperIndices = state.actionHistory
+            .filter { it.action.type == ActionType.CALL && it.phase == GamePhase.PRE_FLOP }
+            .map { it.playerIndex }
+            .toSet()
+        return state.players.filter { it.index in limperIndices && !it.isFolded }
+    }
+
+    private fun limperShoveAdjustment(
+        limpers: List<Player>,
+        bbCount: Int,
+        opponentModeler: OpponentModeler?
+    ): Int {
+        // Dead money: each limper added ~1 BB, worth more at shorter stacks
+        val deadMoneyPerLimper = when {
+            bbCount <= 6 -> 5
+            bbCount <= 10 -> 3
+            bbCount <= 15 -> 2
+            else -> 1
+        }
+        var adjustment = deadMoneyPerLimper * limpers.size
+
+        // Call danger: limpers who'll call a shove tighten the range
+        for (limper in limpers) {
+            val callDanger = if (opponentModeler != null) {
+                val read = opponentModeler.getRead(limper)
+                when (read.playerType) {
+                    OpponentType.LOOSE_PASSIVE -> -8
+                    OpponentType.LOOSE_AGGRESSIVE -> -5
+                    OpponentType.TIGHT_PASSIVE -> -1
+                    OpponentType.TIGHT_AGGRESSIVE -> -3
+                    OpponentType.UNKNOWN -> -4
+                }
+            } else {
+                -4
+            }
+            adjustment += callDanger
+        }
+
+        return adjustment.coerceAtLeast(-adjustmentFloor(limpers.size))
+    }
+
+    private fun adjustmentFloor(limperCount: Int): Int = limperCount * 8
 
     private fun icmPressure(
         stage: TournamentStage,

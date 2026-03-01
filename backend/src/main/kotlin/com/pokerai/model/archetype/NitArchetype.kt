@@ -69,6 +69,7 @@ data object NitArchetype : PlayerArchetype() {
     override fun shoveThreshold(): Int = 8
     override fun shoveRangeWidth(): Double = 0.6
     override fun icmAwareness(): Double = 1.5
+    override fun limperAwareness(): Double = 0.5
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:
