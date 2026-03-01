@@ -18,6 +18,9 @@ sealed class PlayerArchetype {
     abstract fun getFacing3BetCutoff(): Int
     abstract fun getGameContextAdjustment(context: GameContext, scenario: Scenario): Int
     abstract fun buildSystemPrompt(profile: PlayerProfile): String
+    abstract fun shoveThreshold(): Int
+    abstract fun shoveRangeWidth(): Double
+    abstract fun icmAwareness(): Double
 
     open fun getStrategy(): ArchetypeStrategy? = null
 

@@ -26,15 +26,16 @@ object PushFoldChart {
     fun getRange(position: Position, bbCount: Int): Int {
         require(bbCount in 1..15)
 
+        val index = bbCount - 1
         return when (position) {
-            Position.SB -> sbChart[bbCount]
-            Position.BTN -> btnChart[bbCount]
-            Position.CO -> coChart[bbCount]
-            Position.HJ -> hjChart[bbCount]
-            Position.LJ -> lojChart[bbCount]
-            Position.MP -> mpChart[bbCount]
-            Position.UTG1 -> utg1Chart[bbCount]
-            Position.UTG -> utgChart[bbCount]
+            Position.SB -> sbChart[index]
+            Position.BTN -> btnChart[index]
+            Position.CO -> coChart[index]
+            Position.HJ -> hjChart[index]
+            Position.LJ -> lojChart[index]
+            Position.MP -> mpChart[index]
+            Position.UTG1 -> utg1Chart[index]
+            Position.UTG -> utgChart[index]
             else -> 0
         }
 
@@ -44,15 +45,16 @@ object PushFoldChart {
     fun getRangeWithAnte(position: Position, bbCount: Int): Int {
         require(bbCount in 1..15)
 
+        val index = bbCount - 1
         return when (position) {
-            Position.SB -> sbAnteChart[bbCount]
-            Position.BTN -> btnAnteChart[bbCount]
-            Position.CO -> coAnteChart[bbCount]
-            Position.HJ -> hjAnteChart[bbCount]
-            Position.LJ -> lojAnteChart[bbCount]
-            Position.MP -> mpAnteChart[bbCount]
-            Position.UTG1 -> utg1AnteChart[bbCount]
-            Position.UTG -> utgAnteChart[bbCount]
+            Position.SB -> sbAnteChart[index]
+            Position.BTN -> btnAnteChart[index]
+            Position.CO -> coAnteChart[index]
+            Position.HJ -> hjAnteChart[index]
+            Position.LJ -> lojAnteChart[index]
+            Position.MP -> mpAnteChart[index]
+            Position.UTG1 -> utg1AnteChart[index]
+            Position.UTG -> utgAnteChart[index]
             else -> 0
         }
 

@@ -16,7 +16,7 @@ class AiDecisionService(
     suspend fun decide(player: Player, state: GameState, config: GameConfig? = null, tournamentState: TournamentState? = null): AiDecision {
         val difficulty = config?.difficulty
         val decision = if (state.phase == GamePhase.PRE_FLOP) {
-            preFlopStrategy.decide(player, state, tournamentState, config)
+            preFlopStrategy.decide(player, state, tournamentState, config, opponentModeler)
         } else {
             hybridEngine.decide(player, state, difficulty)
         }

@@ -143,12 +143,16 @@ object HandRankings {
 
     private val indexMap: Map<String, Int> = RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
     private val huIndexMap: Map<String, Int> = HU_RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
+    private val pushFoldIndexMap: Map<String, Int> = PUSH_FOLD_RANKED_HANDS.withIndex().associate { (i, hand) -> hand to i }
 
     fun indexOf(hand: String): Int =
         indexMap[hand] ?: error("Unknown hand notation: $hand")
 
     fun huIndexOf(hand: String): Int =
         huIndexMap[hand] ?: error("Unknown hand notation: $hand")
+
+    fun pushFoldIndexOf(hand: String): Int =
+        pushFoldIndexMap[hand] ?: error("Unknown hand notation: $hand")
 
     fun topN(n: Int): Set<String> {
         val clamped = n.coerceIn(0, RANKED_HANDS.size)

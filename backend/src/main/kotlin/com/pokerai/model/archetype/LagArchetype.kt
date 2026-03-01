@@ -66,6 +66,10 @@ data object LagArchetype : PlayerArchetype() {
 
     override fun getStrategy(): ArchetypeStrategy = LagStrategy()
 
+    override fun shoveThreshold(): Int = 15
+    override fun shoveRangeWidth(): Double = 1.3
+    override fun icmAwareness(): Double = 0.4
+
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:
         - "They checked — that's weakness. I can take this pot right now."

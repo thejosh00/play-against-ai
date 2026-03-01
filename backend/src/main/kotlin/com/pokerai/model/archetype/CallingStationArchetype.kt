@@ -60,6 +60,10 @@ data object CallingStationArchetype : PlayerArchetype() {
 
     override fun getFacing3BetCutoff(): Int = 21
 
+    override fun shoveThreshold(): Int = 6
+    override fun shoveRangeWidth(): Double = 0.5
+    override fun icmAwareness(): Double = 0.1
+
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:
         - "I already put chips in — might as well see what comes next."

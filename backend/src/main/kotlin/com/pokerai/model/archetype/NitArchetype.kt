@@ -44,7 +44,7 @@ data object NitArchetype : PlayerArchetype() {
             null -> {}
         }
         when (context.difficulty) {
-            Difficulty.LOW -> {}
+            Difficulty.LOW -> adj -= 1
             Difficulty.MEDIUM -> {}
             Difficulty.HIGH -> adj += 1
         }
@@ -65,6 +65,10 @@ data object NitArchetype : PlayerArchetype() {
     override fun getFacing3BetCutoff(): Int = 5
 
     override fun getStrategy(): ArchetypeStrategy = NitStrategy()
+
+    override fun shoveThreshold(): Int = 8
+    override fun shoveRangeWidth(): Double = 0.6
+    override fun icmAwareness(): Double = 1.5
 
     override fun buildSystemPrompt(profile: PlayerProfile): String = """
         You are a poker player who thinks like this:
