@@ -138,10 +138,13 @@ object GameEngine {
 
     private fun assignPositions(state: GameState) {
         val active = state.playersInHand
-        val total = active.size
-
-        for (player in active) {
-            player.position = Position.forSeat(player.index, state.dealerIndex, total)
+        val tableSize = state.players.size
+        val ordered = active.sortedBy {
+            (it.index - state.dealerIndex - 1 + tableSize) % tableSize
+        }
+        val positions = Position.forSize(ordered.size)
+        ordered.forEachIndexed { i, player ->
+            player.position = positions[i]
         }
     }
 

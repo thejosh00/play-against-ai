@@ -3,6 +3,7 @@ package com.pokerai.ai.strategy
 import com.pokerai.ai.*
 import com.pokerai.analysis.HandStrengthTier
 import com.pokerai.model.Action
+import kotlin.random.Random
 
 /**
  * Coded postflop strategy for the Calling Station archetype.
@@ -166,7 +167,7 @@ class CallingStationStrategy : ArchetypeStrategy {
         return when (tier) {
             HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
                 if (instinct > 55)
-                    if (Math.random() > 0.5) {
+                    if (Random.nextDouble() > 0.5) {
                         // Betting much more than usual (reliable tell)
                         betAction(ctx, p.betSizePotFraction * 1.8, 0.6, "finally have it — making a big bet")
                     } else {
@@ -255,7 +256,7 @@ class CallingStationStrategy : ArchetypeStrategy {
         return when (tier) {
             HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
                 if (instinct > 50) {
-                    if (Math.random() > 0.5) {
+                    if (Random.nextDouble() > 0.5) {
                         // Betting much more than usual (reliable tell)
                         betAction(ctx, p.betSizePotFraction * 1.8, 0.55, "finally have it — making a big bet")
                     } else {
@@ -337,7 +338,7 @@ class CallingStationStrategy : ArchetypeStrategy {
         return when (tier) {
             HandStrengthTier.NUTS, HandStrengthTier.MONSTER -> {
                 if (ctx.closesAction || instinct > 40) {
-                    if (Math.random() > 0.5) {
+                    if (Random.nextDouble() > 0.5) {
                         // Betting much more than usual (reliable tell)
                         betAction(ctx, p.betSizePotFraction * 1.8, 0.6, "finally have it — making a big bet")
                     } else {
@@ -416,7 +417,7 @@ class CallingStationStrategy : ArchetypeStrategy {
             else -> 0.0
         }
 
-        if (Math.random() < curiosityRate) {
+        if (Random.nextDouble() < curiosityRate) {
             return ActionDecision(
                 Action.call(ctx.betToCall),
                 confidence,

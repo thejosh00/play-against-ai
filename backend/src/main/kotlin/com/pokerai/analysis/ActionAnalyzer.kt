@@ -6,7 +6,16 @@ object ActionAnalyzer {
 
     fun analyze(state: GameState, playerIndex: Int): ActionAnalysis {
         val totalPlayers = state.playerCount()
+
+        // Build position map using full table size for correct clockwise ordering
+        val tableSize = state.players.size
         val dealerIndex = state.dealerIndex
+        val activePlayers = state.players.filter { !it.isSittingOut }
+        val ordered = activePlayers.sortedBy {
+            (it.index - dealerIndex - 1 + tableSize) % tableSize
+        }
+        val positions = Position.forSize(ordered.size)
+        val positionMap = ordered.mapIndexed { i, player -> player.index to positions[i] }.toMap()
 
         val preflopRecords = state.actionHistory.filter { it.phase == GamePhase.PRE_FLOP }
         val flopRecords = state.actionHistory.filter { it.phase == GamePhase.FLOP }
@@ -14,25 +23,25 @@ object ActionAnalyzer {
         val riverRecords = state.actionHistory.filter { it.phase == GamePhase.RIVER }
 
         var runningPot = state.smallBlind + state.bigBlind + (state.ante * totalPlayers)
-        val preflopPlayerBets = findBlindBets(state)
+        val preflopPlayerBets = findBlindBets(positionMap, state)
 
         val (preflopActions, postPreflopPot) = buildStreetActions(
-            preflopRecords, dealerIndex, totalPlayers, runningPot, state.bigBlind, preflopPlayerBets
+            preflopRecords, positionMap, runningPot, state.bigBlind, preflopPlayerBets
         )
         runningPot = postPreflopPot
 
         val (flopActions, postFlopPot) = buildStreetActions(
-            flopRecords, dealerIndex, totalPlayers, runningPot, 0
+            flopRecords, positionMap, runningPot, 0
         )
         runningPot = postFlopPot
 
         val (turnActions, postTurnPot) = buildStreetActions(
-            turnRecords, dealerIndex, totalPlayers, runningPot, 0
+            turnRecords, positionMap, runningPot, 0
         )
         runningPot = postTurnPot
 
         val (riverActions, _) = buildStreetActions(
-            riverRecords, dealerIndex, totalPlayers, runningPot, 0
+            riverRecords, positionMap, runningPot, 0
         )
 
         val preflopAggressor = findAggressor(preflopActions)
@@ -108,15 +117,12 @@ object ActionAnalyzer {
         )
     }
 
-    private fun findBlindBets(state: GameState): Map<Int, Int> {
-        val totalPlayers = state.playerCount()
-        val activePlayers = state.players.filter { !it.isSittingOut }
+    private fun findBlindBets(positionMap: Map<Int, Position>, state: GameState): Map<Int, Int> {
         val bets = mutableMapOf<Int, Int>()
-        for (player in activePlayers) {
-            val position = Position.forSeat(player.index, state.dealerIndex, totalPlayers)
+        for ((playerIndex, position) in positionMap) {
             when (position) {
-                Position.SB -> bets[player.index] = state.smallBlind
-                Position.BB -> bets[player.index] = state.bigBlind
+                Position.SB -> bets[playerIndex] = state.smallBlind
+                Position.BB -> bets[playerIndex] = state.bigBlind
                 else -> {}
             }
         }
@@ -125,8 +131,7 @@ object ActionAnalyzer {
 
     private fun buildStreetActions(
         records: List<ActionRecord>,
-        dealerIndex: Int,
-        totalPlayers: Int,
+        positionMap: Map<Int, Position>,
         initialPot: Int,
         initialBetLevel: Int,
         initialPlayerBets: Map<Int, Int> = emptyMap()
@@ -137,7 +142,7 @@ object ActionAnalyzer {
         val actions = mutableListOf<StreetAction>()
 
         for (record in records) {
-            val position = Position.forSeat(record.playerIndex, dealerIndex, totalPlayers)
+            val position = positionMap[record.playerIndex] ?: Position.BTN
             val action = record.action
             val playerPreviousBet = playerStreetBets[record.playerIndex] ?: 0
 
